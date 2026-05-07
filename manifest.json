@@ -2,8 +2,6 @@
   "name": "IronLog — Workout Tracker",
   "short_name": "IronLog",
   "description": "Track workouts, log sets, measure progress",
-  "start_url": "/ironlog/",
-  "scope": "/ironlog/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#09090b",
