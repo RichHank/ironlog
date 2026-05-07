@@ -1,12 +1,10 @@
 import { useRef, useCallback, useEffect } from 'react';
 
-// Screen Wake Lock API to prevent screen dimming during workout sets.
-// Falls back to a silent audio loop if Wake Lock is rejected (iOS WebKit limitation).
+// Screen Wake Lock with video-based fallback (NoSleep.js approach).
+// iOS Safari 18.4+ supports Wake Lock API; older versions need video trick.
 
 let wakeLock: WakeLockSentinel | null = null;
-let audioCtx: AudioContext | null = null;
-let silentBuffer: AudioBuffer | null = null;
-let silentSource: AudioBufferSourceNode | null = null;
+let videoEl: HTMLVideoElement | null = null;
 
 async function requestWakeLock(): Promise<boolean> {
   if ('wakeLock' in navigator) {
@@ -14,56 +12,41 @@ async function requestWakeLock(): Promise<boolean> {
       wakeLock = await navigator.wakeLock.request('screen');
       wakeLock.addEventListener('release', () => { wakeLock = null; });
       return true;
-    } catch {
-      // Fall through to audio fallback
-    }
+    } catch { /* fall through to video fallback */ }
   }
   return false;
 }
 
-async function startSilentAudio(): Promise<boolean> {
-  try {
-    if (!audioCtx) {
-      audioCtx = new AudioContext();
-    }
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    // 0.1s silent buffer at a very low sample rate
-    const sampleRate = audioCtx.sampleRate;
-    const length = Math.floor(sampleRate * 0.1);
-    silentBuffer = audioCtx.createBuffer(1, length, sampleRate);
+function startVideoKeepAwake(): void {
+  if (videoEl) return;
+  videoEl = document.createElement('video');
+  videoEl.setAttribute('playsinline', '');
+  videoEl.setAttribute('muted', '');
+  videoEl.setAttribute('loop', '');
+  videoEl.style.position = 'fixed';
+  videoEl.style.bottom = '0';
+  videoEl.style.right = '0';
+  videoEl.style.width = '1px';
+  videoEl.style.height = '1px';
+  videoEl.style.opacity = '0.01';
+  videoEl.style.pointerEvents = 'none';
+  // Minimal valid MP4 (black frame, ~1s)
+  videoEl.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAAhtZGF0AAAAAAAB';
+  document.body.appendChild(videoEl);
+  videoEl.play().catch(() => {});
+}
 
-    // Loop the silent buffer
-    silentSource = audioCtx.createBufferSource();
-    silentSource.buffer = silentBuffer;
-    silentSource.loop = true;
-    silentSource.connect(audioCtx.destination);
-    silentSource.start();
-    return true;
-  } catch {
-    return false;
+function stopVideoKeepAwake(): void {
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.remove();
+    videoEl = null;
   }
 }
 
-function stopSilentAudio(): void {
-  try {
-    if (silentSource) {
-      silentSource.stop();
-      silentSource.disconnect();
-      silentSource = null;
-    }
-  } catch {}
-}
-
 async function releaseWakeLock(): Promise<void> {
-  try {
-    if (wakeLock) {
-      await wakeLock.release();
-      wakeLock = null;
-    }
-  } catch {}
-  stopSilentAudio();
+  try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } } catch {}
+  stopVideoKeepAwake();
 }
 
 export function useWakeLock() {
@@ -72,11 +55,8 @@ export function useWakeLock() {
   const acquire = useCallback(async () => {
     if (active.current) return;
     active.current = true;
-
     const locked = await requestWakeLock();
-    if (!locked) {
-      await startSilentAudio();
-    }
+    if (!locked) startVideoKeepAwake();
   }, []);
 
   const release = useCallback(async () => {
@@ -84,17 +64,7 @@ export function useWakeLock() {
     await releaseWakeLock();
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      active.current = false;
-      releaseWakeLock();
-      if (audioCtx) {
-        audioCtx.close().catch(() => {});
-        audioCtx = null;
-      }
-    };
-  }, []);
+  useEffect(() => () => { releaseWakeLock(); }, []);
 
   return { acquire, release };
 }

@@ -1,16 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from '../types';
-import { loadSettings } from '../storage';
+import { loadSettings, generateId } from '../storage';
 import { est1RM, formatTime } from '../utils';
+import { parseWorkoutInputSmart } from '../aiParser';
+import { getExercise, EXERCISES } from '../exerciseData';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
 import RestTimer from './RestTimer';
+import VoiceButton from './VoiceButton';
 
 type Props = {
   session: WorkoutSession | null;
   history: WorkoutSession[];
   timer: ReturnType<typeof import('../hooks/useTimer').useTimer>;
   onAddExercise: (key: string, name: string) => void;
+  onAddExerciseWithSets: (key: string, name: string, sets: Omit<WorkoutSet, 'id' | 'completedAt'>[]) => void;
   onAddSet: (exerciseId: string, set: Omit<WorkoutSet, 'id' | 'completedAt'>) => void;
   onUpdateSet: (exerciseId: string, setId: string, updates: Partial<WorkoutSet>) => void;
   onDeleteSet: (exerciseId: string, setId: string) => void;
@@ -22,7 +26,7 @@ type Props = {
 };
 
 export default function WorkoutView({
-  session, history, timer, onAddExercise, onAddSet, onUpdateSet, onDeleteSet,
+  session, history, timer, onAddExercise, onAddExerciseWithSets, onAddSet, onUpdateSet, onDeleteSet,
   onUpdateSession, onDeleteExercise, onFinish, onDiscard, onShowToast,
 }: Props) {
   const unit = loadSettings().weightUnit;
@@ -86,6 +90,34 @@ export default function WorkoutView({
     if (window.navigator?.vibrate) window.navigator.vibrate(5);
   };
 
+  // Voice handler — parses transcript and logs to session atomically
+  const handleVoiceResult = useCallback(async (transcript: string) => {
+    const context = {
+      activeExerciseName: activeExercise?.name,
+      lastWeight: activeExercise?.sets.length ? activeExercise.sets[activeExercise.sets.length - 1].weight : undefined,
+      lastReps: activeExercise?.sets.length ? activeExercise.sets[activeExercise.sets.length - 1].reps ?? undefined : undefined,
+    };
+    const { result } = await parseWorkoutInputSmart(transcript, context);
+    for (const parsedEx of result.exercises) {
+      if (parsedEx.sets.length === 0) continue;
+      const nameLower = parsedEx.name.toLowerCase();
+      const existingEx = session?.exercises.find(e => e.name.toLowerCase() === nameLower);
+      if (existingEx) {
+        for (const set of parsedEx.sets) {
+          onAddSet(existingEx.id, { weight: set.weight, reps: set.reps, rpe: set.rpe ?? null, type: set.type ?? 'normal' });
+        }
+      } else {
+        const match = EXERCISES.find(e => e.name.toLowerCase() === nameLower);
+        const exKey = match?.key ?? nameLower.replace(/\s+/g, '-');
+        onAddExerciseWithSets(exKey, parsedEx.name, parsedEx.sets.map(s => ({
+          weight: s.weight, reps: s.reps, rpe: s.rpe ?? null, type: s.type ?? 'normal',
+        })));
+      }
+      timer.start();
+      onShowToast(`${parsedEx.name}: ${parsedEx.sets.map(s => `${s.weight ?? 'BW'}×${s.reps}`).join(', ')}`);
+    }
+  }, [session, activeExercise, onAddSet, onAddExerciseWithSets, timer, onShowToast]);
+
   if (!hasEntries) {
     return (
       <div className="flex flex-col items-center justify-center px-6 pt-20 animate-fade-in">
@@ -118,7 +150,8 @@ export default function WorkoutView({
           <p className="text-lg font-black text-zinc-50">{totalSets} set{totalSets !== 1 ? 's' : ''} · {totalVolume.toLocaleString()} {unit}</p>
           <p className="text-xs text-zinc-500">{formatTime(session!.startedAt)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <VoiceButton onResult={handleVoiceResult} />
           <button onClick={onDiscard} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
           <button onClick={onFinish} className="btn-primary min-h-touch px-3 py-1.5 text-xs">Finish</button>
         </div>

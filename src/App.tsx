@@ -71,6 +71,18 @@ export default function App() {
     showToast(`Added ${name}`);
   }, [showToast]);
 
+  const addExerciseWithSets = useCallback((exerciseKey: string, name: string, sets: Omit<WorkoutSet, 'id' | 'completedAt'>[]) => {
+    setSession(prev => {
+      const s = prev ?? { id: generateId(), startedAt: Date.now(), completedAt: Date.now(), exercises: [], notes: undefined };
+      const ex: ExerciseLog = {
+        id: generateId(), exerciseKey, name,
+        sets: sets.map(set => ({ ...set, id: generateId(), completedAt: Date.now() })),
+      };
+      return { ...s, exercises: [...s.exercises, ex] };
+    });
+    showToast(`Voice: ${name} ${sets.map(s => `${s.weight ?? 'BW'}×${s.reps}`).join(', ')}`);
+  }, [showToast]);
+
   const addSet = useCallback((exerciseId: string, set: Omit<WorkoutSet, 'id' | 'completedAt'>) => {
     setSession(prev => {
       if (!prev) return prev;
@@ -221,7 +233,7 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-zinc-950">
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-vapor-black relative z-[1]">
       <main className="flex-1 overflow-y-auto pb-28">
         {view === 'workout' && (
           <WorkoutView
@@ -229,6 +241,7 @@ export default function App() {
             history={history}
             timer={timer}
             onAddExercise={addExercise}
+            onAddExerciseWithSets={addExerciseWithSets}
             onAddSet={addSet}
             onUpdateSet={updateSet}
             onDeleteSet={deleteSet}
@@ -266,7 +279,7 @@ export default function App() {
 
       {toast && (
         <div className="pointer-events-none fixed inset-x-0 bottom-36 z-50 flex justify-center">
-          <div className="animate-slide-up rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg">
+          <div className="animate-float-up rounded-full bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-5 py-2 text-sm font-semibold text-white shadow-[0_0_15px_rgba(255,42,163,0.4)]">
             {toast}
           </div>
         </div>
