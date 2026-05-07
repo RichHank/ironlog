@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { WorkoutSession } from '../types';
+import { loadSettings } from '../storage';
 
 type Props = {
   sessions: WorkoutSession[];
@@ -7,6 +8,11 @@ type Props = {
 };
 
 export default function CalendarView({ sessions, onSelect }: Props) {
+  const unit = loadSettings().weightUnit;
+  const today = new Date();
+  const [displayYear, setDisplayYear] = useState(today.getFullYear());
+  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
+
   const workoutDates = useMemo(() => {
     const map = new Map<string, WorkoutSession[]>();
     for (const s of sessions) {
@@ -18,27 +24,32 @@ export default function CalendarView({ sessions, onSelect }: Props) {
     return map;
   }, [sessions]);
 
-  // Build calendar month data
-  const today = new Date();
-  const [year, month] = [today.getFullYear(), today.getMonth()];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonth = () => {
+    if (displayMonth === 0) { setDisplayMonth(11); setDisplayYear(y => y - 1); }
+    else setDisplayMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (displayMonth === 11) { setDisplayMonth(0); setDisplayYear(y => y + 1); }
+    else setDisplayMonth(m => m + 1);
+  };
+
+  const firstDay = new Date(displayYear, displayMonth, 1).getDay();
+  const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
 
   const calendarDays = useMemo(() => {
     const days: { date: Date; isWorkout: boolean; sessions: WorkoutSession[] }[] = [];
     for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
+      const date = new Date(displayYear, displayMonth, d);
       const key = date.toDateString();
       const daySessions = workoutDates.get(key) ?? [];
       days.push({ date, isWorkout: daySessions.length > 0, sessions: daySessions });
     }
     return days;
-  }, [year, month, workoutDates, daysInMonth]);
+  }, [displayYear, displayMonth, workoutDates, daysInMonth]);
 
-  const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+  const monthName = new Date(displayYear, displayMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Activity heat calculation
   const maxSessions = Math.max(1, ...calendarDays.map(d => d.sessions.length));
 
   const getIntensity = (count: number): string => {
@@ -54,19 +65,24 @@ export default function CalendarView({ sessions, onSelect }: Props) {
     <div className="px-3 pt-4 sm:px-4">
       <div className="mb-4">
         <p className="text-xs text-zinc-500 uppercase tracking-wider">Calendar</p>
-        <p className="text-lg font-black text-zinc-50">{monthName}</p>
+        <div className="flex items-center justify-between gap-2">
+          <button onClick={prevMonth} className="min-h-touch rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-zinc-300 active:bg-zinc-700">
+            ←
+          </button>
+          <p className="text-lg font-black text-zinc-50">{monthName}</p>
+          <button onClick={nextMonth} className="min-h-touch rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-zinc-300 active:bg-zinc-700">
+            →
+          </button>
+        </div>
       </div>
 
-      {/* Week day headers */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {weekDays.map(d => (
           <p key={d} className="text-center text-[10px] font-medium text-zinc-600 uppercase">{d}</p>
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Empty cells for offset */}
         {Array.from({ length: firstDay }).map((_, i) => (
           <div key={`empty-${i}`} className="aspect-square" />
         ))}
@@ -81,15 +97,9 @@ export default function CalendarView({ sessions, onSelect }: Props) {
           );
 
           return (
-            <div key={date.getTime()} className="relative">
+            <div key={date.getTime()}>
               <button
-                onClick={() => {
-                  if (daySessions.length === 1) onSelect(daySessions[0].id);
-                  else if (daySessions.length > 1) {
-                    // Show list for multi-workout days — for simplicity pick first
-                    onSelect(daySessions[0].id);
-                  }
-                }}
+                onClick={() => { if (daySessions.length > 0) onSelect(daySessions[0].id); }}
                 disabled={!isWorkout}
                 className={`aspect-square w-full rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${
                   isWorkout ? `${getIntensity(count)} active:scale-95` : 'bg-zinc-800/20'
@@ -109,7 +119,6 @@ export default function CalendarView({ sessions, onSelect }: Props) {
         })}
       </div>
 
-      {/* Legend */}
       <div className="mt-6 card p-4">
         <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Recent Workouts</p>
         <div className="flex flex-col gap-2">
@@ -134,7 +143,7 @@ export default function CalendarView({ sessions, onSelect }: Props) {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-xs font-bold text-zinc-300">{sets} sets</p>
-                  <p className="text-xs text-blue-400">{vol.toLocaleString()} lb</p>
+                  <p className="text-xs text-blue-400">{vol.toLocaleString()} {unit}</p>
                 </div>
               </button>
             );

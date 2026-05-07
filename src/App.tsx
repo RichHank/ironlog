@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
-import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs } from './storage';
+import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, loadSettings } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
@@ -22,7 +22,8 @@ export default function App() {
   const [historyDetailId, setHistoryDetailId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const timer = useTimer(90);
+  const settings = loadSettings();
+  const timer = useTimer(settings.restTimerDuration);
   const iosPWA = useIOSPWA();
 
   // Setup IndexedDB visibility sync for iOS persistence
@@ -126,6 +127,10 @@ export default function App() {
     });
   }, []);
 
+  const updateSessionNotes = useCallback((updates: Partial<WorkoutSession>) => {
+    setSession(prev => prev ? { ...prev, ...updates } : prev);
+  }, []);
+
   const deleteExercise = useCallback((exerciseId: string) => {
     setSession(prev => {
       if (!prev) return prev;
@@ -221,12 +226,13 @@ export default function App() {
         {view === 'workout' && (
           <WorkoutView
             session={session}
+            history={history}
             timer={timer}
             onAddExercise={addExercise}
             onAddSet={addSet}
             onUpdateSet={updateSet}
             onDeleteSet={deleteSet}
-            onReorderExercises={reorderExercises}
+            onUpdateSession={updateSessionNotes}
             onDeleteExercise={deleteExercise}
             onFinish={finishWorkout}
             onDiscard={discardWorkout}

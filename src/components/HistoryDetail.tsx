@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { formatDate, formatTime, formatDuration, est1RM } from '../utils';
+import { loadSettings } from '../storage';
 
 type Props = {
   session: WorkoutSession;
@@ -9,29 +11,50 @@ type Props = {
 };
 
 export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }: Props) {
+  const unit = loadSettings().weightUnit;
+  const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
+  const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
+
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
   const totalVolume = session.exercises.reduce((s, e) =>
     s + e.sets.reduce((ss, set) => ss + (set.weight ?? 0) * (set.reps ?? 0), 0), 0
   );
 
+  const startEdit = (exId: string, set: WorkoutSet) => {
+    setEditing({ exId, setId: set.id });
+    setDraft({ weight: set.weight?.toString() ?? '', reps: set.reps?.toString() ?? '', rpe: set.rpe?.toString() ?? '' });
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const ex = session.exercises.find(e => e.id === editing.exId);
+    const set = ex?.sets.find(s => s.id === editing.setId);
+    if (!set) return;
+    onUpdateSet(session.id, editing.exId, {
+      ...set,
+      weight: draft.weight ? Number(draft.weight) : null,
+      reps: draft.reps ? Number(draft.reps) : null,
+      rpe: draft.rpe ? Number(draft.rpe) : null,
+    });
+    setEditing(null);
+  };
+
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-zinc-950">
-      {/* Header */}
       <div className="safe-area-top border-b border-zinc-800 bg-zinc-950 px-4 pb-3">
         <div className="flex items-center justify-between gap-3 mb-1">
           <button onClick={onBack} className="min-h-touch text-blue-400 font-semibold text-sm">← Back</button>
           <button onClick={() => onDelete(session.id)} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
         </div>
         <h2 className="text-xl font-black text-zinc-50">{session.name ?? formatDate(session.startedAt)}</h2>
-        <div className="mt-1 flex gap-4 text-xs text-zinc-500">
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">
           <span>{formatDate(session.startedAt)} · {formatTime(session.startedAt)}</span>
           {session.duration && <span>{formatDuration(session.duration)}</span>}
           <span>{totalSets} set{totalSets !== 1 ? 's' : ''}</span>
-          <span className="text-blue-400 font-semibold">{totalVolume.toLocaleString()} lb</span>
+          <span className="text-blue-400 font-semibold">{totalVolume.toLocaleString()} {unit}</span>
         </div>
       </div>
 
-      {/* Exercises */}
       <div className="flex-1 overflow-y-auto px-4 pb-8">
         {session.exercises.map((ex, ei) => {
           const exVolume = ex.sets.reduce((s, set) => s + (set.weight ?? 0) * (set.reps ?? 0), 0);
@@ -44,7 +67,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }
                 </div>
                 <div className="flex gap-2">
                   <span className="chip bg-zinc-800 text-zinc-400">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
-                  {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} lb</span>}
+                  {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} {unit}</span>}
                 </div>
               </div>
 
@@ -57,13 +80,41 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }
                       <th className="py-1.5 px-2 text-right font-medium">Reps</th>
                       <th className="py-1.5 px-2 text-right font-medium">RPE</th>
                       <th className="py-1.5 px-2 text-right font-medium">1RM</th>
+                      <th className="py-1.5 px-1 text-right font-medium"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {ex.sets.map((set, si) => {
                       const e1rm = set.weight && set.reps ? est1RM(set.weight, set.reps) : 0;
-                      return (
+                      const isEditing = editing?.exId === ex.id && editing?.setId === set.id;
+                      return isEditing ? (
                         <tr key={set.id} className="border-t border-zinc-800/40">
+                          <td className="py-1.5 pr-2 text-zinc-400">{si + 1}</td>
+                          <td className="py-1.5 px-1">
+                            <input type="number" inputMode="decimal" value={draft.weight}
+                              onChange={e => setDraft(p => ({ ...p, weight: e.target.value }))}
+                              className="w-16 input-field px-1.5 py-1 text-right text-xs font-mono" placeholder="BW" />
+                          </td>
+                          <td className="py-1.5 px-1">
+                            <input type="number" inputMode="numeric" value={draft.reps}
+                              onChange={e => setDraft(p => ({ ...p, reps: e.target.value }))}
+                              className="w-12 input-field px-1.5 py-1 text-right text-xs font-mono" />
+                          </td>
+                          <td className="py-1.5 px-1">
+                            <input type="number" inputMode="decimal" value={draft.rpe}
+                              onChange={e => setDraft(p => ({ ...p, rpe: e.target.value }))}
+                              className="w-12 input-field px-1.5 py-1 text-right text-xs font-mono" />
+                          </td>
+                          <td className="py-1.5 px-1"></td>
+                          <td className="py-1.5 px-1">
+                            <div className="flex gap-1">
+                              <button onClick={saveEdit} className="rounded bg-blue-500 px-2 py-0.5 text-xs font-bold text-white">Save</button>
+                              <button onClick={() => setEditing(null)} className="rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={set.id} className="border-t border-zinc-800/40 group">
                           <td className="py-1.5 pr-2 text-zinc-400">
                             {si + 1}
                             {set.type !== 'normal' && (
@@ -78,6 +129,9 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }
                           <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{set.reps ?? '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-zinc-500">{set.rpe ? `@${set.rpe}` : '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-blue-400">{e1rm > 0 ? e1rm : ''}</td>
+                          <td className="py-1.5 px-1 text-right">
+                            <button onClick={() => startEdit(ex.id, set)} className="text-xs text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">Edit</button>
+                          </td>
                         </tr>
                       );
                     })}

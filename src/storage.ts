@@ -105,6 +105,7 @@ function savePRs(prs: PersonalRecord[]): void {
 }
 
 export function recalcPRs(sessions: WorkoutSession[]): PersonalRecord[] {
+  const unit = loadSettings().weightUnit;
   const prs = new Map<string, PersonalRecord[]>();
 
   for (const session of sessions) {
@@ -118,26 +119,26 @@ export function recalcPRs(sessions: WorkoutSession[]): PersonalRecord[] {
           const e1rm = set.weight * (36 / (37 - Math.min(set.reps, 36)));
           all.push({
             id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'est_1rm', value: Math.round(e1rm), unit: 'lb',
+            type: 'est_1rm', value: Math.round(e1rm), unit,
             achievedAt: set.completedAt, sessionId: session.id,
           });
           all.push({
             id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_weight', value: set.weight, unit: 'lb',
+            type: 'max_weight', value: set.weight, unit,
             achievedAt: set.completedAt, sessionId: session.id,
           });
         }
         if (set.reps && set.reps > 0 && set.weight && set.weight > 0) {
           all.push({
             id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_reps', value: set.reps, unit: `at ${set.weight}lb`,
+            type: 'max_reps', value: set.reps, unit: `at ${set.weight}${unit}`,
             achievedAt: set.completedAt, sessionId: session.id,
           });
         }
         if (set.weight && set.reps && set.weight > 0 && set.reps > 0) {
           all.push({
             id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_volume', value: set.weight * set.reps, unit: 'lb',
+            type: 'max_volume', value: set.weight * set.reps, unit,
             achievedAt: set.completedAt, sessionId: session.id,
           });
         }

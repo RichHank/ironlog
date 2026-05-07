@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ExerciseLog } from '../types';
 import { useWakeLock } from '../hooks/useWakeLock';
 
@@ -25,6 +25,8 @@ type Props = {
 export default function RestTimer({ timer, activeExercise }: Props) {
   const wakeLock = useWakeLock();
 
+  const prevSeconds = useRef(timer.displaySeconds);
+
   // Acquire wake lock while timer is running, release when it stops
   useEffect(() => {
     if (timer.isRunning) {
@@ -33,6 +35,14 @@ export default function RestTimer({ timer, activeExercise }: Props) {
       wakeLock.release();
     }
   }, [timer.isRunning, wakeLock]);
+
+  // Completion notification: vibrate when timer hits 0
+  useEffect(() => {
+    if (prevSeconds.current > 0 && timer.displaySeconds === 0 && timer.isRunning) {
+      if (window.navigator?.vibrate) window.navigator.vibrate([200, 100, 200, 100, 400]);
+    }
+    prevSeconds.current = timer.displaySeconds;
+  }, [timer.displaySeconds, timer.isRunning]);
 
   const progress = timer.isRunning
     ? ((timer.displaySeconds) / timer.duration) * 100

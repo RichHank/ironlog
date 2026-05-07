@@ -1,4 +1,5 @@
 import { WorkoutSession } from './types';
+import { getExercise } from './exerciseData';
 
 export function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -104,77 +105,7 @@ export function muscleGroupVolume(sessions: WorkoutSession[]): Map<string, numbe
 }
 
 function getMuscleGroupsForKey(key: string): string[] {
-  // Lazy import pattern — use the exerciseData map
-  const map: Record<string, string[]> = {
-    'barbell-bench': ['Chest', 'Triceps', 'Front Delts'],
-    'dumbbell-bench': ['Chest', 'Triceps', 'Front Delts'],
-    'incline-barbell-bench': ['Upper Chest', 'Triceps', 'Front Delts'],
-    'incline-dumbbell-bench': ['Upper Chest', 'Triceps', 'Front Delts'],
-    'decline-bench': ['Chest', 'Triceps'],
-    'dumbbell-fly': ['Chest'],
-    'cable-fly': ['Chest'],
-    'pec-deck': ['Chest'],
-    'chest-dip': ['Chest', 'Triceps'],
-    'push-up': ['Chest', 'Triceps'],
-    'smith-machine-bench': ['Chest', 'Triceps'],
-    'chest-press-machine': ['Chest', 'Triceps'],
-    'deadlift': ['Back', 'Glutes', 'Hamstrings'],
-    'romanian-deadlift': ['Hamstrings', 'Back', 'Glutes'],
-    'barbell-row': ['Back', 'Biceps'],
-    'dumbbell-row': ['Back', 'Biceps'],
-    'pull-up': ['Back', 'Biceps'],
-    'chin-up': ['Back', 'Biceps'],
-    'lat-pulldown': ['Back', 'Biceps'],
-    'seated-cable-row': ['Back', 'Biceps'],
-    't-bar-row': ['Back', 'Biceps'],
-    'face-pull': ['Rear Delts'],
-    'straight-arm-pulldown': ['Back'],
-    'ohp': ['Shoulders', 'Triceps'],
-    'dumbbell-ohp': ['Shoulders', 'Triceps'],
-    'lateral-raise': ['Side Delts'],
-    'front-raise': ['Front Delts'],
-    'rear-delt-fly': ['Rear Delts'],
-    'cable-lateral-raise': ['Side Delts'],
-    'arnold-press': ['Shoulders', 'Triceps'],
-    'shrug': ['Traps'],
-    'upright-row': ['Shoulders', 'Traps'],
-    'barbell-curl': ['Biceps'],
-    'dumbbell-curl': ['Biceps'],
-    'hammer-curl': ['Biceps'],
-    'preacher-curl': ['Biceps'],
-    'incline-curl': ['Biceps'],
-    'cable-curl': ['Biceps'],
-    'close-grip-bench': ['Triceps', 'Chest'],
-    'tricep-pushdown': ['Triceps'],
-    'overhead-tricep-ext': ['Triceps'],
-    'skull-crusher': ['Triceps'],
-    'tricep-dip': ['Triceps', 'Chest'],
-    'diamond-pushup': ['Triceps', 'Chest'],
-    'wrist-curl': ['Forearms'],
-    'squat': ['Quads', 'Glutes', 'Hamstrings'],
-    'front-squat': ['Quads', 'Glutes'],
-    'bulgarian-split-squat': ['Quads', 'Glutes', 'Hamstrings'],
-    'goblet-squat': ['Quads', 'Glutes'],
-    'leg-press': ['Quads', 'Glutes', 'Hamstrings'],
-    'hack-squat': ['Quads', 'Glutes'],
-    'leg-extension': ['Quads'],
-    'lying-leg-curl': ['Hamstrings'],
-    'seated-leg-curl': ['Hamstrings'],
-    'nordic-curl': ['Hamstrings', 'Glutes'],
-    'hip-thrust': ['Glutes', 'Hamstrings'],
-    'glute-bridge': ['Glutes'],
-    'cable-kickback': ['Glutes'],
-    'calf-raise': ['Calves'],
-    'seated-calf-raise': ['Calves'],
-    'lunge': ['Quads', 'Glutes', 'Hamstrings'],
-    'step-up': ['Quads', 'Glutes'],
-    'cable-crunch': ['Abs'],
-    'hanging-leg-raise': ['Abs'],
-    'plank': ['Abs'],
-    'ab-wheel': ['Abs'],
-    'russian-twist': ['Obliques'],
-    'decline-crunch': ['Abs'],
-    'woodchopper': ['Obliques'],
-  };
-  return map[key] ?? [];
+  const ex = getExercise(key);
+  if (!ex) return [];
+  return [...new Set([...ex.primaryMuscles, ...ex.secondaryMuscles])];
 }

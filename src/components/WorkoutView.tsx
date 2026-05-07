@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from '../types';
-import { getExercise } from '../exerciseData';
+import { loadSettings } from '../storage';
 import { est1RM, formatTime } from '../utils';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
@@ -8,12 +8,13 @@ import RestTimer from './RestTimer';
 
 type Props = {
   session: WorkoutSession | null;
+  history: WorkoutSession[];
   timer: ReturnType<typeof import('../hooks/useTimer').useTimer>;
   onAddExercise: (key: string, name: string) => void;
   onAddSet: (exerciseId: string, set: Omit<WorkoutSet, 'id' | 'completedAt'>) => void;
   onUpdateSet: (exerciseId: string, setId: string, updates: Partial<WorkoutSet>) => void;
   onDeleteSet: (exerciseId: string, setId: string) => void;
-  onReorderExercises: (ids: string[]) => void;
+  onUpdateSession?: (updates: Partial<WorkoutSession>) => void;
   onDeleteExercise: (id: string) => void;
   onFinish: () => void;
   onDiscard: () => void;
@@ -21,15 +22,35 @@ type Props = {
 };
 
 export default function WorkoutView({
-  session, timer, onAddExercise, onAddSet, onUpdateSet, onDeleteSet,
-  onDeleteExercise, onFinish, onDiscard, onShowToast,
+  session, history, timer, onAddExercise, onAddSet, onUpdateSet, onDeleteSet,
+  onUpdateSession, onDeleteExercise, onFinish, onDiscard, onShowToast,
 }: Props) {
+  const unit = loadSettings().weightUnit;
   const [showSelector, setShowSelector] = useState(false);
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [editingSet, setEditingSet] = useState<{ exerciseId: string; setId: string } | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<WorkoutSet>>({});
+  const [sessionNotes, setSessionNotes] = useState(session?.notes ?? '');
 
   const hasEntries = session && (session.exercises.length > 0 || (session.exercises.some(e => e.sets.length > 0)));
+
+  // Look up previous workout data per exercise
+  const prevWorkoutLookup = useMemo(() => {
+    if (!session || history.length === 0) return new Map<string, { weight: number | null; reps: number | null; e1rm: number }>();
+    const map = new Map<string, { weight: number | null; reps: number | null; e1rm: number }>();
+    for (const s of history) {
+      for (const ex of s.exercises) {
+        if (!map.has(ex.exerciseKey) && ex.sets.length > 0) {
+          const last = ex.sets[ex.sets.length - 1];
+          map.set(ex.exerciseKey, {
+            weight: last.weight, reps: last.reps,
+            e1rm: last.weight && last.reps ? est1RM(last.weight, last.reps) : 0,
+          });
+        }
+      }
+    }
+    return map;
+  }, [history, session]);
 
   const totalSets = useMemo(() =>
     session?.exercises.reduce((s, e) => s + e.sets.length, 0) ?? 0
@@ -94,7 +115,7 @@ export default function WorkoutView({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs text-zinc-500 uppercase tracking-wider">Active Workout</p>
-          <p className="text-lg font-black text-zinc-50">{totalSets} set{totalSets !== 1 ? 's' : ''} · {totalVolume.toLocaleString()} lb</p>
+          <p className="text-lg font-black text-zinc-50">{totalSets} set{totalSets !== 1 ? 's' : ''} · {totalVolume.toLocaleString()} {unit}</p>
           <p className="text-xs text-zinc-500">{formatTime(session!.startedAt)}</p>
         </div>
         <div className="flex gap-2">
@@ -124,19 +145,25 @@ export default function WorkoutView({
               </div>
               <div className="ml-2 flex items-center gap-2 flex-shrink-0">
                 <span className="chip bg-zinc-800 text-zinc-400">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
-                {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} lb</span>}
+                {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} {unit}</span>}
               </div>
             </button>
 
             {isExpanded && (
               <div className="border-t border-zinc-800 px-4 pb-3">
                 {/* Previous workout comparison */}
-                {idx === 0 && lastSet && (
-                  <div className="mt-3 rounded-lg bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400">
-                    <span>Last set: {lastSet.weight}lb × {lastSet.reps} reps</span>
-                    {prev1rm > 0 && <span className="ml-3">Est. 1RM: {prev1rm} lb</span>}
-                  </div>
-                )}
+                {(() => {
+                  const prev = prevWorkoutLookup.get(ex.exerciseKey);
+                  if (!prev) return null;
+                  return (
+                    <div className="mt-3 rounded-lg bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400">
+                      <span>
+                        Previous: {prev.weight ?? 'BW'}{unit} × {prev.reps ?? '?'} reps
+                        {prev.e1rm > 0 && <span className="ml-2">· Est. 1RM: {prev.e1rm} {unit}</span>}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Sets table */}
                 {ex.sets.length > 0 && (
@@ -249,6 +276,19 @@ export default function WorkoutView({
       >
         + Add Exercise
       </button>
+
+      {/* Workout Notes */}
+      <div className="card p-4">
+        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Workout Notes</p>
+        <textarea
+          value={sessionNotes}
+          onChange={e => setSessionNotes(e.target.value)}
+          onBlur={() => onUpdateSession?.({ notes: sessionNotes || undefined })}
+          placeholder="How did this workout feel? Any notes..."
+          rows={2}
+          className="input-field w-full resize-none text-sm"
+        />
+      </div>
 
       {/* Rest Timer */}
       <RestTimer timer={timer} activeExercise={activeExercise} />
