@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { loadSettings } from '../storage';
-import { est1RM, formatTime } from '../utils';
+import { est1RM, formatTime, formatWeightCell } from '../utils';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
 import RestTimer from './RestTimer';
@@ -191,7 +191,7 @@ export default function WorkoutView({
                   return (
                     <div className="mt-3 rounded-lg bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400">
                       <span>
-                        Previous: {prev.weight ?? 'BW'}{unit} × {prev.reps ?? '?'} reps
+                        Previous: {formatWeightCell(prev.weight, ex.exerciseKey)}{prev.weight !== null ? unit : ''} × {prev.reps ?? '?'} reps
                         {prev.e1rm > 0 && <span className="ml-2">· Est. 1RM: {prev.e1rm} {unit}</span>}
                       </span>
                     </div>
@@ -257,7 +257,7 @@ export default function WorkoutView({
                                 </span>
                               </td>
                               <td className="py-1.5 px-2 text-right font-mono font-semibold text-zinc-200">
-                                {set.weight !== null ? set.weight : 'BW'}
+                                {formatWeightCell(set.weight, ex.exerciseKey)}
                               </td>
                               <td className="py-1.5 px-2 text-right font-mono font-semibold text-zinc-200">{set.reps ?? '-'}</td>
                               <td className="py-1.5 px-2 text-right font-mono text-zinc-500 hidden sm:table-cell">

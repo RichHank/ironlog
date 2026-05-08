@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ExerciseLog, WorkoutSet, SetType } from '../types';
+import { weightPlaceholder } from '../utils';
+import { loadSettings } from '../storage';
 
 type Props = {
   exercise: ExerciseLog;
@@ -41,7 +43,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
             inputMode="decimal"
             value={weight}
             onChange={e => setWeight(e.target.value)}
-            placeholder="BW"
+            placeholder={weightPlaceholder(exercise.exerciseKey, loadSettings().weightUnit)}
             className="input-field w-full text-right font-mono"
           />
         </div>

@@ -12,6 +12,7 @@ import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
 import SettingsView from './components/SettingsView';
 import NavBar from './components/NavBar';
+import { formatWeightCell } from './utils';
 
 export type View = 'workout' | 'history' | 'calendar' | 'analytics' | 'routines' | 'settings';
 
@@ -80,7 +81,7 @@ export default function App() {
       };
       return { ...s, exercises: [...s.exercises, ex] };
     });
-    showToast(`Voice: ${name} ${sets.map(s => `${s.weight ?? 'BW'}×${s.reps}`).join(', ')}`);
+    showToast(`Voice: ${name} ${sets.map(s => `${formatWeightCell(s.weight, exerciseKey)}×${s.reps}`).join(', ')}`);
   }, [showToast]);
 
   const addSet = useCallback((exerciseId: string, set: Omit<WorkoutSet, 'id' | 'completedAt'>) => {
