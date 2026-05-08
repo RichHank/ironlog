@@ -22,6 +22,19 @@ export function formatSeconds(total: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+export function isBodyweightExercise(exerciseKey: string): boolean {
+  return getExercise(exerciseKey)?.equipment === 'Bodyweight';
+}
+
+export function formatWeightCell(weight: number | null, exerciseKey: string): string {
+  if (weight !== null) return String(weight);
+  return isBodyweightExercise(exerciseKey) ? 'BW' : '—';
+}
+
+export function weightPlaceholder(exerciseKey: string, unit: string): string {
+  return isBodyweightExercise(exerciseKey) ? 'BW' : unit;
+}
+
 export function est1RM(weight: number, reps: number): number {
   if (reps >= 36) return weight;
   return Math.round(weight * (36 / (37 - reps)));

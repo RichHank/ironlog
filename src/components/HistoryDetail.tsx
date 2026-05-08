@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
-import { formatDate, formatTime, formatDuration, est1RM } from '../utils';
+import { formatDate, formatTime, formatDuration, est1RM, formatWeightCell } from '../utils';
 import { loadSettings } from '../storage';
 
 type Props = {
@@ -125,7 +125,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }
                               }`}>{set.type}</span>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{set.weight ?? 'BW'}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{formatWeightCell(set.weight, ex.exerciseKey)}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{set.reps ?? '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-zinc-500">{set.rpe ? `@${set.rpe}` : '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-blue-400">{e1rm > 0 ? e1rm : ''}</td>

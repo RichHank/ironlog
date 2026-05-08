@@ -3,6 +3,7 @@ import { classifyIntent, ClassifiedIntent } from '../voiceCommands';
 import { parseWorkoutInputSmart } from '../aiParser';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { EXERCISES } from '../exerciseData';
+import { formatWeightCell } from '../utils';
 import { playSuccessChime, playErrorBuzz, speak } from '../voiceFeedback';
 import type { View } from '../App';
 
@@ -253,7 +254,8 @@ async function dispatchLogSet(c: ClassifiedIntent, h: VoiceCommandHandlers, sess
       })));
     }
     h.timer.start();
-    messages.push(`${parsedEx.name}: ${parsedEx.sets.map(s => `${s.weight ?? 'BW'}×${s.reps ?? '?'}`).join(', ')}`);
+    const exKeyForFmt = existing?.exerciseKey ?? EXERCISES.find(e => e.name.toLowerCase() === nameLower)?.key ?? nameLower.replace(/\s+/g, '-');
+    messages.push(`${parsedEx.name}: ${parsedEx.sets.map(s => `${formatWeightCell(s.weight, exKeyForFmt)}×${s.reps ?? '?'}`).join(', ')}`);
   }
 
   const message = messages.join('; ');
