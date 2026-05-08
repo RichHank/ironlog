@@ -1,14 +1,14 @@
-import { useState, useMemo, useCallback } from 'react';
-import { WorkoutSession, WorkoutSet, ExerciseLog } from '../types';
-import { loadSettings, generateId } from '../storage';
+import { useState, useMemo } from 'react';
+import { WorkoutSession, WorkoutSet } from '../types';
+import { loadSettings } from '../storage';
 import { est1RM, formatTime } from '../utils';
-import { parseWorkoutInputSmart } from '../aiParser';
-import { getExercise, EXERCISES } from '../exerciseData';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
 import RestTimer from './RestTimer';
 import VoiceButton from './VoiceButton';
 import { SynthwaveSun } from './Icons';
+import { useVoiceCommands } from '../hooks/useVoiceCommands';
+import type { View } from '../App';
 
 type Props = {
   session: WorkoutSession | null;
@@ -23,12 +23,14 @@ type Props = {
   onDeleteExercise: (id: string) => void;
   onFinish: () => void;
   onDiscard: () => void;
+  onUndoLast: () => void;
+  onNavigate: (view: View) => void;
   onShowToast: (msg: string) => void;
 };
 
 export default function WorkoutView({
   session, history, timer, onAddExercise, onAddExerciseWithSets, onAddSet, onUpdateSet, onDeleteSet,
-  onUpdateSession, onDeleteExercise, onFinish, onDiscard, onShowToast,
+  onUpdateSession, onDeleteExercise, onFinish, onDiscard, onUndoLast, onNavigate, onShowToast,
 }: Props) {
   const unit = loadSettings().weightUnit;
   const [showSelector, setShowSelector] = useState(false);
@@ -91,33 +93,22 @@ export default function WorkoutView({
     if (window.navigator?.vibrate) window.navigator.vibrate(5);
   };
 
-  // Voice handler — parses transcript and logs to session atomically
-  const handleVoiceResult = useCallback(async (transcript: string) => {
-    const context = {
-      activeExerciseName: activeExercise?.name,
-      lastWeight: activeExercise?.sets.length ? activeExercise.sets[activeExercise.sets.length - 1].weight : undefined,
-      lastReps: activeExercise?.sets.length ? activeExercise.sets[activeExercise.sets.length - 1].reps ?? undefined : undefined,
-    };
-    const { result } = await parseWorkoutInputSmart(transcript, context);
-    for (const parsedEx of result.exercises) {
-      if (parsedEx.sets.length === 0) continue;
-      const nameLower = parsedEx.name.toLowerCase();
-      const existingEx = session?.exercises.find(e => e.name.toLowerCase() === nameLower);
-      if (existingEx) {
-        for (const set of parsedEx.sets) {
-          onAddSet(existingEx.id, { weight: set.weight, reps: set.reps, rpe: set.rpe ?? null, type: set.type ?? 'normal' });
-        }
-      } else {
-        const match = EXERCISES.find(e => e.name.toLowerCase() === nameLower);
-        const exKey = match?.key ?? nameLower.replace(/\s+/g, '-');
-        onAddExerciseWithSets(exKey, parsedEx.name, parsedEx.sets.map(s => ({
-          weight: s.weight, reps: s.reps, rpe: s.rpe ?? null, type: s.type ?? 'normal',
-        })));
-      }
-      timer.start();
-      onShowToast(`${parsedEx.name}: ${parsedEx.sets.map(s => `${s.weight ?? 'BW'}×${s.reps}`).join(', ')}`);
-    }
-  }, [session, activeExercise, onAddSet, onAddExerciseWithSets, timer, onShowToast]);
+  const voice = useVoiceCommands({
+    session,
+    onAddExercise,
+    onAddExerciseWithSets,
+    onAddSet,
+    onUpdateSet,
+    onDeleteSet,
+    onDeleteExercise,
+    onUpdateSession: (updates) => onUpdateSession?.(updates),
+    onFinish,
+    onDiscard,
+    onUndoLast,
+    onNavigate,
+    onShowToast,
+    timer: { start: timer.start, pause: timer.pause, resume: timer.resume, reset: timer.reset },
+  });
 
   if (!hasEntries) {
     return (
@@ -138,7 +129,7 @@ export default function WorkoutView({
           <span className="text-[10px] text-[#887baa] uppercase tracking-wider">or speak</span>
           <div className="h-px flex-1 bg-[#ff2aa3]/15" />
         </div>
-        <VoiceButton onResult={handleVoiceResult} className="mt-4" />
+        <VoiceButton onResult={voice.execute} className="mt-4" />
         <ExerciseSelector
           open={showSelector}
           onClose={() => setShowSelector(false)}
@@ -160,7 +151,7 @@ export default function WorkoutView({
           <p className="text-xs text-[#887baa]">{formatTime(session!.startedAt)}</p>
         </div>
         <div className="flex gap-2 items-center">
-          <VoiceButton onResult={handleVoiceResult} />
+          <VoiceButton onResult={voice.execute} />
           <button onClick={onDiscard} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
           <button onClick={onFinish} className="btn-primary min-h-touch px-3 py-1.5 text-xs">Finish</button>
         </div>
