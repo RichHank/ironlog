@@ -3,6 +3,12 @@ import { EXERCISE_ALIASES } from './exerciseAliases';
 import { SCALE_WORDS, TENS_WORDS, UNIT_WORDS } from './parserConstants';
 import { normalizeJargon } from './voiceJargon';
 
+type ParserContext = {
+  activeExerciseName?: string;
+  lastWeight?: number | null;
+  lastReps?: number;
+};
+
 const NUMBER_TOKEN = /^[a-z]+$/;
 
 function parseNumberWordsAt(words: string[], start: number): { value: number; end: number } | null {
@@ -85,7 +91,7 @@ function expandSlang(input: string): string {
 }
 
 function normalize(input: string): string {
-  return input.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[‘’']/g, "'");
+  return input.toLowerCase().trim().replace(/\s+/g, ' ').replace(/[`'']/g, "'");
 }
 
 function normalizeOperators(input: string): string {
@@ -139,9 +145,40 @@ function detectFreeformExercise(input: string): { name: string; remaining: strin
   };
 }
 
-export function parseWorkoutInput(
+// ── Conjunction splitting ──
+
+function splitOnConjunctions(input: string): string[] {
+  const parts = input.split(/\s+then\s+|\s+followed\s+by\s+|\s+after\s+that\s+/i);
+  const result: string[] = [];
+  for (const part of parts) {
+    const andParts = part.split(/(?<=\d)\s+and\s+/i);
+    result.push(...andParts);
+  }
+  return result.filter(s => s.trim().length > 0);
+}
+
+// ── Confidence calculation ──
+
+function calcConfidence(
+  exerciseFound: boolean,
+  sets: { weight: number | null; reps: number | null; isAMRAP?: boolean; isBodyweight?: boolean }[],
+  usedActiveContext: boolean,
+  hasWarnings: boolean,
+  hadGuesses: boolean,
+): 'high' | 'medium' | 'low' {
+  if (!exerciseFound || sets.length === 0) return 'low';
+  if (usedActiveContext || hasWarnings || hadGuesses) return 'medium';
+  const allComplete = sets.every(s =>
+    (s.weight !== null && s.reps !== null) || s.isAMRAP || s.isBodyweight
+  );
+  return allComplete ? 'high' : 'medium';
+}
+
+// ── Core single-segment parsing ──
+
+function parseSingleSegment(
   input: string,
-  context: { activeExerciseName?: string; lastWeight?: number | null; lastReps?: number } = {}
+  context: ParserContext = {}
 ): ParseResult {
   const warnings: string[] = [];
   const jargonNormalized = normalizeJargon(input);
@@ -149,6 +186,7 @@ export function parseWorkoutInput(
   let detectedExerciseName: string | undefined;
   let exerciseNotes: string | undefined;
   let usedActiveContext = false;
+  let hadGuesses = false;
 
   const detected = detectExercise(remaining);
   const freeform = detected ? null : detectFreeformExercise(remaining);
@@ -164,13 +202,15 @@ export function parseWorkoutInput(
   }
 
   if (!detectedExerciseName) {
-    return { exercises: [], confidence: 'low', warnings: ['No exercise detected. Start with an exercise name like "bench", "squat", etc.'] };
+    return { exercises: [], confidence: 'low', warnings: ['No exercise detected. Start with an exercise name like "bench", "squat", etc.'], needsConfirmation: true };
   }
 
+  // ── Bodyweight prefix ──
   let isBodyweight = false;
   const bwMatch = remaining.match(/^bodyweight\b\s*/i);
   if (bwMatch) { isBodyweight = true; remaining = remaining.slice(bwMatch[0].length).trim(); }
 
+  // ── Failed prefix ──
   const failedMatch = remaining.match(/^failed\s+(\d+(?:\.\d+)?)\s*/i);
   let failedSet: { weight: number; reps: number; note: string } | null = null;
   if (failedMatch) {
@@ -178,6 +218,7 @@ export function parseWorkoutInput(
     remaining = remaining.slice(failedMatch[0].length).trim();
   }
 
+  // ── "same weight" ──
   let sameWeightReps: number | null = null;
   const sameWeightMatch = remaining.match(/^same\s+weight(?:\s+for\s+(\d+))?\s*/i);
   if (sameWeightMatch) {
@@ -188,20 +229,44 @@ export function parseWorkoutInput(
     }
   }
 
+  // ── "only got" ──
   let onlyGotReps: number | null = null;
   const onlyGotMatch = remaining.match(/^only\s+got\s+(\d+)\s*/i);
   if (onlyGotMatch) { onlyGotReps = parseInt(onlyGotMatch[1]); remaining = remaining.slice(onlyGotMatch[0].length).trim(); }
 
-  // Warmup prefix: "warmup with 135 then 185 for 5"
-  let warmupSet: { weight: number; reps: number } | null = null;
-  const warmupMatch = remaining.match(/^warmup\s+(?:with\s+|at\s+)?(\d+(?:\.\d+)?)(?:\s+for\s+(\d+))?\s*(?:[,;]|then\s+|and\s+)?\s*/i);
+  // ── "for N" without weight (uses context weight) ──
+  let contextForReps: number | null = null;
+  if (sameWeightReps === null && onlyGotReps === null) {
+    const forOnlyMatch = remaining.match(/^for\s+(\d+)\s*/i);
+    if (forOnlyMatch) {
+      contextForReps = parseInt(forOnlyMatch[1]);
+      remaining = remaining.slice(forOnlyMatch[0].length).trim();
+    }
+  }
+
+  // ── Warmup prefix ──
+  let warmupSet: { weight: number | null; reps: number } | null = null;
+  const warmupMatch = remaining.match(/^warmup\s+(?:with\s+|at\s+)?(\d+(?:\.\d+)?)?\s*(?:for\s+(\d+))?\s*(?:[,;]|then\s+|and\s+)?\s*/i);
   if (warmupMatch) {
-    warmupSet = { weight: parseFloat(warmupMatch[1]), reps: warmupMatch[2] ? parseInt(warmupMatch[2]) : 5 };
+    warmupSet = {
+      weight: warmupMatch[1] ? parseFloat(warmupMatch[1]) : null,
+      reps: warmupMatch[2] ? parseInt(warmupMatch[2]) : 5,
+    };
     remaining = remaining.slice(warmupMatch[0].length).trim();
   }
 
-  // Drop set: "drop set 185 to 135" / "drop set 185 to 135 to 95"
-  const dropSets: { weight: number; reps: number | null; type: 'normal' | 'drop' }[] = [];
+  // Also: "bar x N" or "bar for N" as warmup
+  if (!warmupMatch) {
+    const barMatch = remaining.match(/^bar\s+(?:x|for)\s+(\d+)\s*/i);
+    if (barMatch) {
+      warmupSet = { weight: null, reps: parseInt(barMatch[1]) };
+      remaining = remaining.slice(barMatch[0].length).trim();
+      hadGuesses = true;
+    }
+  }
+
+  // ── Drop set ──
+  const dropSets: { weight: number | null; reps: number | null; type: 'normal' | 'drop' }[] = [];
   const dropPrefix = remaining.match(/^drop\s+set\s+(\d+(?:\.\d+)?)/i);
   if (dropPrefix) {
     let rest = remaining.slice(dropPrefix[0].length).trim();
@@ -219,28 +284,44 @@ export function parseWorkoutInput(
     }
   }
 
-  // AMRAP: "AMRAP at 155" / "165 amrap" / "amrap 155"
-  let amrapSet: { weight: number | null; note: string } | null = null;
+  // ── AMRAP ──
+  let amrapSet: { weight: number | null; reps: number | null; note: string } | null = null;
   if (dropSets.length === 0) {
-    const amrapMatch = remaining.match(/^amrap(?:\s+(?:at|with|@)\s+(\d+(?:\.\d+)?))?\s*$/i)
-                    || remaining.match(/^amrap\s+(\d+(?:\.\d+)?)\s*$/i)
-                    || remaining.match(/^(\d+(?:\.\d+)?)\s+amrap\s*$/i);
+    const amrapMatch = remaining.match(/^AMRAP(?:\s+(?:at|with|@)\s+(\d+(?:\.\d+)?))?\s*$/i)
+                    || remaining.match(/^AMRAP\s+(\d+(?:\.\d+)?)\s*$/i)
+                    || remaining.match(/^(\d+(?:\.\d+)?)\s+AMRAP\s*$/i);
     if (amrapMatch) {
       const w = amrapMatch[1] ? parseFloat(amrapMatch[1]) : (context.lastWeight ?? null);
-      amrapSet = { weight: w, note: 'AMRAP' };
+      amrapSet = { weight: w, reps: null, note: 'AMRAP' };
       remaining = '';
     }
   }
 
-  const rawSets: { weight: number | null; reps: number | null }[] = [];
-  if (failedSet) rawSets.push({ weight: failedSet.weight, reps: failedSet.reps });
+  // ── RPE extraction (before set parsing, to catch "@8" patterns) ──
+  let rpeOverride: number | null = null;
+  const rpeEarlyMatch = remaining.match(/rpe_(\d+(?:\.\d+)?)/i);
+  if (rpeEarlyMatch) {
+    rpeOverride = parseFloat(rpeEarlyMatch[1]);
+    remaining = remaining.replace(rpeEarlyMatch[0], '').trim();
+  }
+
+  // ── Build raw sets from remaining text ──
+  const rawSets: { weight: number | null; reps: number | null; isWarmup?: boolean; isBodyweight?: boolean; isAMRAP?: boolean; isDropSet?: boolean; failed?: boolean; rpe?: number | null }[] = [];
+
+  if (failedSet) rawSets.push({ weight: failedSet.weight, reps: failedSet.reps, failed: true });
+
   if (sameWeightReps !== null || onlyGotReps !== null) {
     rawSets.push({ weight: context.lastWeight ?? null, reps: onlyGotReps ?? sameWeightReps ?? context.lastReps ?? 5 });
   }
 
+  if (contextForReps !== null) {
+    rawSets.push({ weight: context.lastWeight ?? null, reps: contextForReps });
+  }
+
+  // ── Multi-set patterns from remaining text ──
   let textAfterSets = remaining;
   if (rawSets.length === 0 && dropSets.length === 0 && !amrapSet && remaining.length > 0) {
-    // Set multiplier: "3 sets of 10 at 185"
+    // "3 sets of 10 at 185"
     const multiA = remaining.match(/^(\d+)\s+sets?\s+of\s+(\d+)\s+(?:at|with|@|for)\s+(\d+(?:\.\d+)?)/i);
     if (multiA) {
       const count = parseInt(multiA[1]);
@@ -250,7 +331,7 @@ export function parseWorkoutInput(
       textAfterSets = remaining.slice(multiA[0].length).trim();
     }
 
-    // Set multiplier reversed: "185 for 3 sets of 10"
+    // "185 for 3 sets of 10"
     if (rawSets.length === 0) {
       const multiB = remaining.match(/^(\d+(?:\.\d+)?)\s+for\s+(\d+)\s+sets?\s+of\s+(\d+)/i);
       if (multiB) {
@@ -262,21 +343,39 @@ export function parseWorkoutInput(
       }
     }
 
-    // Dumbbell: "70s 8 8 7"
+    // "3 sets to failure" / "3 sets AMRAP"
+    if (rawSets.length === 0) {
+      const multiAmrap = remaining.match(/^(\d+)\s+sets?\s+(?:to\s+failure|AMRAP)/i);
+      if (multiAmrap) {
+        const count = parseInt(multiAmrap[1]);
+        for (let i = 0; i < count; i++) rawSets.push({ weight: context.lastWeight ?? null, reps: null, isAMRAP: true });
+        textAfterSets = remaining.slice(multiAmrap[0].length).trim();
+      }
+    }
+
+    // Dumbbell: "70s 8 8 7" or "50s for 12"
     if (rawSets.length === 0) {
       const dbMatch = remaining.match(/^(\d+(?:\.\d+)?)s\s+/i);
       if (dbMatch) {
         const dbWeight = parseFloat(dbMatch[1]);
         let restDb = remaining.slice(dbMatch[0].length).trim();
-        const repNumbers = restDb.match(/^[\d\s]+/);
-        if (repNumbers) {
-          repNumbers[0].trim().split(/\s+/).map(Number).forEach(r => rawSets.push({ weight: dbWeight, reps: r }));
-          textAfterSets = restDb.slice(repNumbers[0].length).trim();
+        // Try "for N" pattern first (e.g., "50s for 12")
+        const forMatch = restDb.match(/^for\s+(\d+)/i);
+        if (forMatch) {
+          rawSets.push({ weight: dbWeight, reps: parseInt(forMatch[1]) });
+          textAfterSets = restDb.slice(forMatch[0].length).trim();
+        } else {
+          // Bare rep numbers (e.g., "70s 8 8 7")
+          const repNumbers = restDb.match(/^[\d\s]+/);
+          if (repNumbers) {
+            repNumbers[0].trim().split(/\s+/).map(Number).forEach(r => rawSets.push({ weight: dbWeight, reps: r }));
+            textAfterSets = restDb.slice(repNumbers[0].length).trim();
+          }
         }
       }
     }
 
-    // Standard weight x reps
+    // Standard weight x reps: "135x10, 155x10, 175x5"
     if (rawSets.length === 0) {
       const wxrRegex = /(\d+(?:\.\d+)?)\s*x\s*(\d+)/gi;
       let m: RegExpExecArray | null;
@@ -288,7 +387,7 @@ export function parseWorkoutInput(
       if (rawSets.length > 0) textAfterSets = remaining.slice(lastWxrIndex).trim();
     }
 
-    // "for" pattern (also catches comma-separated back-to-back: "135 for 8, 185 for 5, 225 for 3")
+    // "for" pattern (also catches comma-separated: "135 for 8, 185 for 5, 225 for 3")
     if (rawSets.length === 0) {
       const wfrRegex = /(\d+(?:\.\d+)?)\s+for\s+(\d+)/gi;
       let m: RegExpExecArray | null;
@@ -300,7 +399,7 @@ export function parseWorkoutInput(
       if (rawSets.length > 0) textAfterSets = remaining.slice(lastWfrIndex).trim();
     }
 
-    // "then" separated
+    // "then" separated back-to-back
     if (rawSets.length === 0) {
       const thenParts = remaining.split(/\s+then\s+/i);
       let allParsed = true;
@@ -318,10 +417,10 @@ export function parseWorkoutInput(
     // Bodyweight bare numbers
     if (rawSets.length === 0 && isBodyweight) {
       const allNums = remaining.match(/\d+/g);
-      if (allNums) { allNums.forEach(n => rawSets.push({ weight: null, reps: parseInt(n) })); textAfterSets = remaining.replace(/[\d\s]+/, '').trim(); }
+      if (allNums) { allNums.forEach(n => rawSets.push({ weight: null, reps: parseInt(n), isBodyweight: true })); textAfterSets = remaining.replace(/[\d\s]+/, '').trim(); }
     }
 
-    // Bare number pairs
+    // Bare number pairs (e.g., "185 10" or "135 10 155 8")
     if (rawSets.length === 0 && !isBodyweight) {
       const numPairs = remaining.match(/^\s*(\d+(?:\.\d+)?)\s+(\d+)(?:\s+(\d+(?:\.\d+)?)\s+(\d+))?(?:\s+(\d+(?:\.\d+)?)\s+(\d+))?/);
       if (numPairs) {
@@ -337,7 +436,7 @@ export function parseWorkoutInput(
       }
     }
 
-    // Context fallback (bare reps using last weight)
+    // Context fallback: bare reps using last weight
     if (rawSets.length === 0 && context.lastWeight !== undefined && context.lastWeight !== null) {
       const leading = remaining.trimStart();
       const reps: number[] = [];
@@ -352,46 +451,148 @@ export function parseWorkoutInput(
     }
   }
 
-  let rpe: number | null = null;
-  const rpeMatch = textAfterSets.match(/rpe\s+(\d+(?:\.\d+)?)/i);
-  if (rpeMatch) { rpe = parseFloat(rpeMatch[1]); textAfterSets = textAfterSets.replace(rpeMatch[0], '').trim(); }
+  // ── Extract RPE from remaining text ──
+  let rpe: number | null = rpeOverride;
+  if (rpe === null) {
+    const rpeMatch = textAfterSets.match(/(?:rpe|@)\s*(\d+(?:\.\d+)?)/i);
+    if (rpeMatch) { rpe = parseFloat(rpeMatch[1]); textAfterSets = textAfterSets.replace(rpeMatch[0], '').trim(); }
+  }
 
+  const rpeFromJargon = textAfterSets.match(/rpe_(\d+(?:\.\d+)?)/i);
+  if (rpeFromJargon) { rpe = parseFloat(rpeFromJargon[1]); textAfterSets = textAfterSets.replace(rpeFromJargon[0], '').trim(); }
+
+  // ── Remaining text becomes notes ──
   const noteText = textAfterSets.replace(/[,\s]+/g, ' ').trim();
   if (noteText) {
     exerciseNotes = noteText;
     if (failedSet && noteText) { failedSet.note = noteText; exerciseNotes = undefined; }
   }
 
+  // ── Assemble final sets ──
   const finalSets: ParseResult['exercises'][0]['sets'] = [];
-  if (warmupSet) finalSets.push({ weight: warmupSet.weight, reps: warmupSet.reps, type: 'warmup' });
+
+  if (warmupSet) {
+    finalSets.push({
+      weight: warmupSet.weight,
+      reps: warmupSet.reps,
+      type: 'warmup',
+      isWarmup: true,
+    });
+  }
+
   if (dropSets.length > 0) {
     for (const ds of dropSets) {
-      finalSets.push({ weight: ds.weight, reps: ds.reps, type: ds.type });
+      finalSets.push({
+        weight: ds.weight,
+        reps: ds.reps,
+        type: ds.type,
+        isDropSet: ds.type === 'drop',
+      });
     }
   }
+
   if (amrapSet) {
-    finalSets.push({ weight: amrapSet.weight, reps: null, type: 'normal', note: amrapSet.note });
+    finalSets.push({
+      weight: amrapSet.weight,
+      reps: amrapSet.reps,
+      type: 'normal',
+      note: amrapSet.note,
+      isAMRAP: true,
+    });
   }
+
   rawSets.forEach((rs, i) => {
+    const isLast = i === rawSets.length - 1;
     finalSets.push({
       weight: rs.weight,
       reps: rs.reps,
-      rpe: i === rawSets.length - 1 && rpe !== null ? rpe : undefined,
-      note: i === rawSets.length - 1 && failedSet ? failedSet.note : undefined,
-      type: 'normal',
+      rpe: isLast && rpe !== null ? rpe : rs.rpe ?? undefined,
+      note: isLast && failedSet ? failedSet.note : undefined,
+      type: rs.failed ? 'failure' : rs.isWarmup ? 'warmup' : rs.isDropSet ? 'drop' : 'normal',
+      isWarmup: rs.isWarmup,
+      isDropSet: rs.isDropSet,
+      isAMRAP: rs.isAMRAP,
+      isBodyweight: rs.isBodyweight || isBodyweight,
+      failed: rs.failed,
     });
   });
 
+  // ── Fallback: no sets parsed ──
   if (finalSets.length === 0 && !exerciseNotes) {
-    return { exercises: [{ name: detectedExerciseName, sets: [], notes: exerciseNotes }], confidence: 'low', warnings: warnings.length ? warnings : ['No sets detected. Try "bench 225x5" or "squat 315 for 5".'] };
+    return {
+      exercises: [{ name: detectedExerciseName, sets: [], notes: exerciseNotes }],
+      confidence: 'low',
+      warnings: warnings.length ? warnings : ['No sets detected. Try "bench 225x5" or "squat 315 for 5".'],
+      needsConfirmation: true,
+    };
   }
 
-  let confidence: 'high' | 'medium' | 'low' = 'high';
-  if (warnings.length > 0 || sameWeightReps !== null || onlyGotReps !== null || amrapSet) confidence = 'medium';
-  if (usedActiveContext) confidence = confidence === 'high' ? 'medium' : confidence;
-  if (finalSets.length === 0) confidence = 'low';
+  const confidence = calcConfidence(true, finalSets, usedActiveContext, warnings.length > 0, hadGuesses);
 
-  return { exercises: [{ name: detectedExerciseName, sets: finalSets, notes: exerciseNotes }], confidence, warnings };
+  return {
+    exercises: [{ name: detectedExerciseName, sets: finalSets, notes: exerciseNotes }],
+    confidence,
+    warnings,
+    needsConfirmation: confidence === 'medium',
+  };
+}
+
+// ── Public API ──
+
+export function parseWorkoutInput(
+  input: string,
+  context: ParserContext = {}
+): ParseResult {
+  const segments = splitOnConjunctions(input);
+
+  if (segments.length <= 1) {
+    return parseSingleSegment(input, context);
+  }
+
+  // Multi-segment: parse first for exercise, rest for sets
+  const firstResult = parseSingleSegment(segments[0], context);
+  const exerciseName = firstResult.exercises[0]?.name ?? context.activeExerciseName ?? null;
+
+  if (!exerciseName) {
+    return {
+      exercises: [],
+      confidence: 'low',
+      warnings: ['No exercise detected. Start with an exercise name like "bench", "squat", etc.'],
+      needsConfirmation: true,
+    };
+  }
+
+  const allSets = [...(firstResult.exercises[0]?.sets ?? [])];
+  const allWarnings = [...firstResult.warnings];
+  let lastWeight = allSets.length > 0 ? allSets[allSets.length - 1].weight : context.lastWeight ?? null;
+  let lastReps: number | undefined = allSets.length > 0 ? (allSets[allSets.length - 1].reps ?? undefined) : context.lastReps;
+  let usedActiveContext = false;
+
+  for (let i = 1; i < segments.length; i++) {
+    const segCtx: ParserContext = {
+      activeExerciseName: exerciseName,
+      lastWeight,
+      lastReps,
+    };
+    const segResult = parseSingleSegment(segments[i], segCtx);
+    const segSets = segResult.exercises[0]?.sets ?? [];
+    allSets.push(...segSets);
+    allWarnings.push(...segResult.warnings);
+    if (segSets.length > 0) {
+      const last = segSets[segSets.length - 1];
+      lastWeight = last.weight ?? lastWeight;
+      lastReps = last.reps ?? lastReps;
+    }
+  }
+
+  const confidence = calcConfidence(true, allSets, usedActiveContext, allWarnings.length > 0, false);
+
+  return {
+    exercises: [{ name: exerciseName, sets: allSets }],
+    confidence,
+    warnings: allWarnings,
+    needsConfirmation: confidence === 'medium',
+  };
 }
 
 export function suggestNextSet(
