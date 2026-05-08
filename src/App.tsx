@@ -179,6 +179,22 @@ export default function App() {
     showToast('Workout discarded');
   }, [timer, showToast]);
 
+  const undoLast = useCallback(() => {
+    setSession(prev => {
+      if (!prev) return prev;
+      for (let i = prev.exercises.length - 1; i >= 0; i--) {
+        const ex = prev.exercises[i];
+        if (ex.sets.length > 0) {
+          return {
+            ...prev,
+            exercises: prev.exercises.map((e, idx) => idx === i ? { ...e, sets: e.sets.slice(0, -1) } : e),
+          };
+        }
+      }
+      return prev;
+    });
+  }, []);
+
   const startFromRoutine = useCallback((exercises: { key: string; name: string }[]) => {
     const s: WorkoutSession = {
       id: generateId(), startedAt: Date.now(), completedAt: Date.now(), exercises: [], notes: undefined,
@@ -249,6 +265,8 @@ export default function App() {
             onDeleteExercise={deleteExercise}
             onFinish={finishWorkout}
             onDiscard={discardWorkout}
+            onUndoLast={undoLast}
+            onNavigate={setView}
             onShowToast={showToast}
           />
         )}
