@@ -133,6 +133,12 @@ export default function WorkoutView({
         >
           Start Workout
         </button>
+        <div className="mt-4 flex items-center gap-2">
+          <div className="h-px flex-1 bg-[#ff2aa3]/15" />
+          <span className="text-[10px] text-[#887baa] uppercase tracking-wider">or speak</span>
+          <div className="h-px flex-1 bg-[#ff2aa3]/15" />
+        </div>
+        <VoiceButton onResult={handleVoiceResult} className="mt-4" />
         <ExerciseSelector
           open={showSelector}
           onClose={() => setShowSelector(false)}
