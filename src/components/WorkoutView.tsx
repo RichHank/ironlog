@@ -8,6 +8,7 @@ import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
 import RestTimer from './RestTimer';
 import VoiceButton from './VoiceButton';
+import { SynthwaveSun } from './Icons';
 
 type Props = {
   session: WorkoutSession | null;
@@ -120,18 +121,18 @@ export default function WorkoutView({
 
   if (!hasEntries) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 pt-20 animate-fade-in">
-        <div className="text-center">
-          <span className="text-6xl">🏋️</span>
-          <h2 className="mt-4 text-2xl font-black tracking-tight text-zinc-50">Start Your Workout</h2>
-          <p className="mt-2 text-sm text-zinc-400">Add an exercise to begin logging sets</p>
-          <button
-            onClick={() => { setShowSelector(true); handleHaptic(); }}
-            className="mt-6 min-h-touch rounded-xl bg-blue-500 px-6 py-3 font-bold text-white active:scale-95 transition-transform"
-          >
-            + Add Exercise
-          </button>
-        </div>
+      <div className="flex flex-col items-center justify-center px-6 pt-12 animate-fade-in">
+        <SynthwaveSun />
+        <h2 className="mt-2 font-display text-3xl font-black tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-r from-[#ff2aa3] via-[#fede5d] to-[#00f5ff] [text-shadow:none] uppercase">
+          IronLog
+        </h2>
+        <p className="mt-1 text-xs text-[#887baa] tracking-[0.2em] uppercase">Training Log</p>
+        <button
+          onClick={() => { setShowSelector(true); handleHaptic(); }}
+          className="mt-8 min-h-touch rounded-xl border border-[#ff2aa3]/40 bg-[#ff2aa3]/10 px-8 py-3 font-bold text-[#ff2aa3] shadow-[0_0_20px_rgba(255,42,163,0.2)] active:scale-95 transition-all hover:bg-[#ff2aa3]/20 hover:shadow-[0_0_30px_rgba(255,42,163,0.4)]"
+        >
+          Start Workout
+        </button>
         <ExerciseSelector
           open={showSelector}
           onClose={() => setShowSelector(false)}
@@ -147,8 +148,10 @@ export default function WorkoutView({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs text-zinc-500 uppercase tracking-wider">Active Workout</p>
-          <p className="text-lg font-black text-zinc-50">{totalSets} set{totalSets !== 1 ? 's' : ''} · {totalVolume.toLocaleString()} {unit}</p>
-          <p className="text-xs text-zinc-500">{formatTime(session!.startedAt)}</p>
+          <p className="text-lg font-black text-[#f0e6ff]">
+            <span className="text-glow-cyan">{totalSets}</span> set{totalSets !== 1 ? 's' : ''} · <span className="text-glow-cyan">{totalVolume.toLocaleString()}</span> {unit}
+          </p>
+          <p className="text-xs text-[#887baa]">{formatTime(session!.startedAt)}</p>
         </div>
         <div className="flex gap-2 items-center">
           <VoiceButton onResult={handleVoiceResult} />

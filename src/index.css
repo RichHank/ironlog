@@ -40,19 +40,33 @@
     inset: 0;
     background: repeating-linear-gradient(
       0deg, transparent, transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px, rgba(0, 0, 0, 0.03) 4px
+      rgba(0, 0, 0, 0.04) 2px, rgba(0, 0, 0, 0.04) 4px
     );
     pointer-events: none;
     z-index: 9999;
+  }
+
+  /* Retro grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(rgba(255,42,163,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-[#ff2aa3]/15 bg-[#12121A]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(255,42,163,0.06)];
+    @apply rounded-xl border border-[#ff2aa3]/20 bg-[#12121A]/80 backdrop-blur-xl;
+    box-shadow: 0 0 20px rgba(255,42,163,0.04), 0 0 40px rgba(0,245,255,0.02);
   }
   .card-active {
-    @apply border-[#ff2aa3]/40 shadow-[0_0_20px_rgba(255,42,163,0.15)];
+    border-color: rgba(255,42,163,0.5);
+    box-shadow: 0 0 25px rgba(255,42,163,0.12), 0 0 50px rgba(0,245,255,0.06);
   }
   .btn-primary {
     @apply rounded-lg bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-4 py-2.5 font-semibold text-white
@@ -86,9 +100,9 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .text-glow-pink {
-    text-shadow: 0 0 7px rgba(255,42,163,0.6), 0 0 14px rgba(255,42,163,0.3);
+    text-shadow: 0 0 7px rgba(255,42,163,0.7), 0 0 14px rgba(255,42,163,0.4), 0 0 28px rgba(255,42,163,0.2);
   }
   .text-glow-cyan {
-    text-shadow: 0 0 7px rgba(0,245,255,0.6), 0 0 14px rgba(0,245,255,0.3);
+    text-shadow: 0 0 7px rgba(0,245,255,0.7), 0 0 14px rgba(0,245,255,0.4), 0 0 28px rgba(0,245,255,0.2);
   }
 }
