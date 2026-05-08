@@ -32,13 +32,14 @@ export default function RestTimer({ timer, activeExercise }: Props) {
   }, [timer.isRunning, wakeLock]);
 
   useEffect(() => {
-    if (prevSeconds.current > 0 && timer.displaySeconds === 0 && timer.isRunning) {
+    const justExpired = prevSeconds.current > 0 && timer.displaySeconds === 0;
+    if (justExpired && !document.hidden) {
       if (window.navigator?.vibrate) window.navigator.vibrate([200, 100, 200, 100, 400]);
       setGlitch(true);
       setTimeout(() => setGlitch(false), 600);
     }
     prevSeconds.current = timer.displaySeconds;
-  }, [timer.displaySeconds, timer.isRunning]);
+  }, [timer.displaySeconds]);
 
   const progress = timer.isRunning ? (timer.displaySeconds / timer.duration) * 100 : 0;
   const isUrgent = timer.displaySeconds <= 10 && timer.isRunning;
