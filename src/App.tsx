@@ -3,6 +3,7 @@ import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
 import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
+import { shareWorkoutAsFit } from './share';
 import { getVaporSynth } from './vaporSynth';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
@@ -275,6 +276,18 @@ export default function App() {
     }
   }, [history, showToast]);
 
+  const shareHistoryAsFit = useCallback(async (sessionId: string) => {
+    const target = history.find(s => s.id === sessionId);
+    if (!target) return;
+    try {
+      const result = await shareWorkoutAsFit(target);
+      if (result === 'shared') showToast('Sent — pick Garmin Connect from share sheet');
+      else if (result === 'downloaded') showToast('FIT downloaded — upload to Garmin Connect');
+    } catch (err) {
+      showToast(`Share failed: ${err instanceof Error ? err.message : err}`);
+    }
+  }, [history, showToast]);
+
   const discardWorkout = useCallback(() => {
     setSession(null);
     clearSession();
@@ -348,6 +361,7 @@ export default function App() {
         onDelete={deleteHistoryWorkout}
         onUpdateSet={updateHistorySet}
         onPushToStrava={pushHistoryToStrava}
+        onShareFit={shareHistoryAsFit}
       />
     );
   }
