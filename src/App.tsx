@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
-import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, loadSettings } from './storage';
+import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
 import { getVaporSynth } from './vaporSynth';
@@ -209,7 +209,7 @@ export default function App() {
     setSession(null);
     clearSession();
     timer.reset();
-    recalcPRs(updated);
+    updatePRsAfterAdd(completed);
     showToast('Workout saved!');
     setView('history');
 
