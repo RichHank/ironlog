@@ -3,6 +3,7 @@ import {
   PersonalRecord, BodyMeasurement, AppSettings,
 } from './types';
 import { est1RM } from './utils';
+import { idbSet, idbRemove, idbGetJSON } from './idb-storage';
 
 export function generateId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -27,8 +28,19 @@ function readJSON<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 
+// Every writer mirrors to both stores: localStorage for synchronous reads on
+// the next render, IDB for persistence across iOS's 7-day eviction. The IDB
+// write is fire-and-forget — if it fails the localStorage copy still keeps
+// the in-session experience consistent.
 function writeJSON(key: string, value: unknown): void {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* quota */ }
+  const serialised = JSON.stringify(value);
+  try { localStorage.setItem(key, serialised); } catch { /* quota */ }
+  void idbSet(key, serialised);
+}
+
+function removeKey(key: string): void {
+  try { localStorage.removeItem(key); } catch {}
+  void idbRemove(key);
 }
 
 // ── Session ──
@@ -41,7 +53,7 @@ export function saveSession(session: WorkoutSession): void {
 }
 
 export function clearSession(): void {
-  localStorage.removeItem(SESSION_KEY);
+  removeKey(SESSION_KEY);
 }
 
 // ── History ──
@@ -284,7 +296,28 @@ export function downloadFile(filename: string, content: string, type: string): v
 }
 
 export function clearAllData(): void {
-  [SESSION_KEY, HISTORY_KEY, ROUTINES_KEY, PRS_KEY, MEASUREMENTS_KEY].forEach(k =>
-    localStorage.removeItem(k)
-  );
+  [SESSION_KEY, HISTORY_KEY, ROUTINES_KEY, PRS_KEY, MEASUREMENTS_KEY].forEach(removeKey);
+}
+
+// One-shot hydration from IDB. Returns whatever IDB has for each app key so
+// callers can adopt it as React state on mount — necessary because cold-start
+// reads from localStorage will be empty after iOS evicts it, even though IDB
+// still has the data.
+export async function hydrateFromIDB(): Promise<{
+  session: WorkoutSession | null;
+  history: WorkoutSession[];
+  routines: Routine[];
+  prs: PersonalRecord[];
+  measurements: BodyMeasurement[];
+  settings: AppSettings;
+}> {
+  const [session, history, routines, prs, measurements, settings] = await Promise.all([
+    idbGetJSON<WorkoutSession | null>(SESSION_KEY, null),
+    idbGetJSON<WorkoutSession[]>(HISTORY_KEY, []),
+    idbGetJSON<Routine[]>(ROUTINES_KEY, []),
+    idbGetJSON<PersonalRecord[]>(PRS_KEY, []),
+    idbGetJSON<BodyMeasurement[]>(MEASUREMENTS_KEY, []),
+    idbGetJSON<AppSettings>(SETTINGS_KEY, { weightUnit: 'lb', restTimerDuration: 90 }),
+  ]);
+  return { session, history, routines, prs, measurements, settings };
 }

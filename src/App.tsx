@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
-import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings } from './storage';
+import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
 import { getVaporSynth } from './vaporSynth';
@@ -39,8 +39,24 @@ export default function App() {
     if (session) wakeLock.acquire(); else wakeLock.release();
   }, [session, wakeLock]);
 
-  // Setup IndexedDB visibility sync for iOS persistence
+  // Setup IndexedDB visibility sync for iOS persistence (best-effort flush
+  // on hide; the canonical persistence path is the write-through in
+  // saveSession/saveHistory etc.)
   useEffect(() => { setupVisibilitySync(); }, []);
+
+  // Cold-start hydration. localStorage may have been evicted by iOS but IDB
+  // is durable — pull from IDB on mount and overlay anything we find that's
+  // newer/non-empty. Without this, an evicted-localStorage user would open
+  // to an empty app even though all their data is sitting in IDB.
+  useEffect(() => {
+    let cancelled = false;
+    hydrateFromIDB().then(idb => {
+      if (cancelled) return;
+      setSession(prev => prev ?? idb.session);
+      setHistory(prev => prev.length > 0 ? prev : idb.history);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Vaporwave background music — auto-start on first user gesture (browser autoplay policy)
   useEffect(() => {
