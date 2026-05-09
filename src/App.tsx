@@ -281,10 +281,14 @@ export default function App() {
     if (!target) return;
     try {
       const { result, trace } = await shareWorkoutAsFit(target);
-      // Diagnostic trace is appended so we can see which MIME path the
-      // browser actually accepted (or none).
-      if (result === 'shared') showToast(`Shared · ${trace}`);
-      else if (result === 'downloaded') showToast(`Downloaded (no share) · ${trace}`);
+      // Diagnostic via persistent alert so the trace is readable and
+      // copy-able. Toast auto-fades too fast for long strings.
+      if (result === 'shared') showToast('Shared!');
+      else if (result === 'cancelled') showToast('Cancelled');
+      else {
+        try { await navigator.clipboard?.writeText(trace); } catch { /* no-op */ }
+        window.alert(`Downloaded (share unavailable)\n\nDiagnostic:\n${trace}\n\n(Copied to clipboard.)`);
+      }
     } catch (err) {
       showToast(`Share failed: ${err instanceof Error ? err.message : err}`);
     }
