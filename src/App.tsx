@@ -3,7 +3,7 @@ import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
 import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
-import { shareWorkoutAsFit } from './share';
+import type { ShareOutcome } from './share';
 import { getVaporSynth } from './vaporSynth';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
@@ -276,23 +276,14 @@ export default function App() {
     }
   }, [history, showToast]);
 
-  const shareHistoryAsFit = useCallback(async (sessionId: string) => {
-    const target = history.find(s => s.id === sessionId);
-    if (!target) return;
-    try {
-      const { result, trace } = await shareWorkoutAsFit(target);
-      // Diagnostic via persistent alert so the trace is readable and
-      // copy-able. Toast auto-fades too fast for long strings.
-      if (result === 'shared') showToast('Shared!');
-      else if (result === 'cancelled') showToast('Cancelled');
-      else {
-        try { await navigator.clipboard?.writeText(trace); } catch { /* no-op */ }
-        window.alert(`Downloaded (share unavailable)\n\nDiagnostic:\n${trace}\n\n(Copied to clipboard.)`);
-      }
-    } catch (err) {
-      showToast(`Share failed: ${err instanceof Error ? err.message : err}`);
+  const handleShareDone = useCallback(({ result, trace }: ShareOutcome) => {
+    if (result === 'shared') showToast('Shared!');
+    else if (result === 'cancelled') showToast('Cancelled');
+    else {
+      navigator.clipboard?.writeText(trace).catch(() => {});
+      window.alert(`Downloaded (share unavailable)\n\nDiagnostic:\n${trace}\n\n(Copied to clipboard.)`);
     }
-  }, [history, showToast]);
+  }, [showToast]);
 
   const discardWorkout = useCallback(() => {
     setSession(null);
@@ -367,7 +358,7 @@ export default function App() {
         onDelete={deleteHistoryWorkout}
         onUpdateSet={updateHistorySet}
         onPushToStrava={pushHistoryToStrava}
-        onShareFit={shareHistoryAsFit}
+        onShareDone={handleShareDone}
       />
     );
   }
