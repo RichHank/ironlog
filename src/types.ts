@@ -28,6 +28,7 @@ export interface WorkoutSession {
   exercises: ExerciseLog[];
   notes?: string;
   templateId?: string;
+  stravaActivityId?: number;
 }
 
 export interface PlannedSet {

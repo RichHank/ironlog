@@ -1,0 +1,10 @@
+name = "ironlog-strava"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+STRAVA_CLIENT_ID = "237824"
+ALLOWED_ORIGINS = "https://richhank.github.io,http://localhost:5173"
+
+# Set the secret (one-time, never commits anywhere):
+#   cd worker && npx wrangler secret put STRAVA_CLIENT_SECRET

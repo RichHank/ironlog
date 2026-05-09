@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
 import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, loadSettings } from './storage';
 import { setupVisibilitySync } from './idb-storage';
+import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
 import WorkoutView from './components/WorkoutView';
@@ -46,6 +47,28 @@ export default function App() {
     if (window.navigator?.vibrate) window.navigator.vibrate(10);
     setTimeout(() => setToast(null), 1800);
   }, []);
+
+  // Handle Strava OAuth redirect (?code=&state=)
+  useEffect(() => {
+    const cb = readOAuthCallback();
+    if (!cb) return;
+    let cancelled = false;
+    completeOAuth(cb)
+      .then(t => {
+        if (cancelled) return;
+        const who = t.athlete?.firstname ? `Connected to Strava as ${t.athlete.firstname}` : 'Connected to Strava';
+        showToast(who);
+        setView('settings');
+      })
+      .catch(err => {
+        if (cancelled) return;
+        showToast(`Strava connect failed: ${err.message ?? err}`);
+      })
+      .finally(() => {
+        if (!cancelled) clearOAuthCallback();
+      });
+    return () => { cancelled = true; };
+  }, [showToast]);
 
   // Persist session changes
   useEffect(() => {
@@ -171,7 +194,43 @@ export default function App() {
     recalcPRs(updated);
     showToast('Workout saved!');
     setView('history');
+
+    // Auto-push to Strava if connected (fire-and-forget)
+    loadTokens().then(t => {
+      if (!t) return;
+      pushWorkout(completed)
+        .then(({ id }) => {
+          setHistory(prev => {
+            const next = prev.map(s => s.id === completed.id ? { ...s, stravaActivityId: id } : s);
+            saveHistory(next);
+            return next;
+          });
+          showToast('Pushed to Strava');
+        })
+        .catch(err => showToast(`Strava push failed: ${err.message ?? err}`));
+    });
   }, [session, timer, showToast]);
+
+  const pushHistoryToStrava = useCallback(async (sessionId: string) => {
+    const target = history.find(s => s.id === sessionId);
+    if (!target) return;
+    const t = await loadTokens();
+    if (!t) {
+      showToast('Connect Strava in Settings first');
+      return;
+    }
+    try {
+      const { id } = await pushWorkout(target);
+      setHistory(prev => {
+        const next = prev.map(s => s.id === sessionId ? { ...s, stravaActivityId: id } : s);
+        saveHistory(next);
+        return next;
+      });
+      showToast('Pushed to Strava');
+    } catch (err) {
+      showToast(`Strava push failed: ${err instanceof Error ? err.message : err}`);
+    }
+  }, [history, showToast]);
 
   const discardWorkout = useCallback(() => {
     setSession(null);
@@ -245,6 +304,7 @@ export default function App() {
         onBack={() => setHistoryDetailId(null)}
         onDelete={deleteHistoryWorkout}
         onUpdateSet={updateHistorySet}
+        onPushToStrava={pushHistoryToStrava}
       />
     );
   }
