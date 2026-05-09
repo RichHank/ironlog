@@ -1,7 +1,7 @@
 // IronLog Service Worker
 // Cache-first strategy for app shell, network-first for API calls.
 
-const CACHE = 'ironlog-v1';
+const CACHE = 'ironlog-v2';
 const APP_SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -28,10 +28,17 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // For app shell files: cache-first
+  // For app shell files: network-first so deploys are picked up immediately,
+  // fall back to cache only when offline.
   if (APP_SHELL.some((p) => url.pathname.endsWith(p))) {
     event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || new Response('Offline', { status: 503 })))
     );
     return;
   }
