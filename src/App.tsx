@@ -14,6 +14,7 @@ import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
 import SettingsView from './components/SettingsView';
 import NavBar from './components/NavBar';
+import BootMascot from './components/BootMascot';
 import { formatWeightCell } from './utils';
 
 export type View = 'workout' | 'history' | 'calendar' | 'analytics' | 'routines' | 'settings';
@@ -385,6 +386,8 @@ export default function App() {
       {iosPWA.showPrompt && (
         <InstallPrompt onDismiss={iosPWA.dismissPermanently} />
       )}
+
+      <BootMascot />
     </div>
   );
 }
