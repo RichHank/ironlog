@@ -9,17 +9,24 @@ type Props = {
   onDelete: (id: string) => void;
   onUpdateSet: (sessionId: string, exerciseId: string, set: WorkoutSet) => void;
   onPushToStrava: (sessionId: string) => Promise<void>;
+  onShareFit: (sessionId: string) => Promise<void>;
 };
 
-export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava }: Props) {
+export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava, onShareFit }: Props) {
   const unit = loadSettings().weightUnit;
   const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
   const [pushing, setPushing] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const handlePush = async () => {
     setPushing(true);
     try { await onPushToStrava(session.id); } finally { setPushing(false); }
+  };
+
+  const handleShare = async () => {
+    setSharing(true);
+    try { await onShareFit(session.id); } finally { setSharing(false); }
   };
 
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
@@ -52,6 +59,14 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
         <div className="flex items-center justify-between gap-3 mb-1">
           <button onClick={onBack} className="min-h-touch text-blue-400 font-semibold text-sm">← Back</button>
           <div className="flex gap-2">
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              title="Generate a .FIT file and share to Garmin Connect (or download)"
+              className="min-h-touch rounded-lg bg-zinc-700 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+            >
+              {sharing ? '…' : 'Send .FIT'}
+            </button>
             {session.stravaActivityId ? (
               <a
                 href={`https://www.strava.com/activities/${session.stravaActivityId}`}
