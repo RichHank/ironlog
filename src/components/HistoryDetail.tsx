@@ -31,15 +31,36 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
   // functions caused share() to throw NotAllowedError on Pixel/Chrome.
   const handleShare = () => {
     setSharing(true);
-    shareWorkoutAsFit(session)
-      .then(onShareDone)
-      .catch((err: unknown) => {
-        onShareDone({
-          result: 'downloaded',
-          trace: `unexpected:${err instanceof Error ? err.name : 'unknown'}`,
+    let settled = false;
+    const settle = (outcome: ShareOutcome) => {
+      if (settled) return;
+      settled = true;
+      setSharing(false);
+      onShareDone(outcome);
+    };
+    // Watchdog — if share() neither resolves nor rejects within 15s
+    // (e.g. silently swallowed by the PWA standalone context), unstick
+    // the button and report a timeout so we can see what's going on.
+    const watchdog = window.setTimeout(() => {
+      settle({ result: 'downloaded', trace: 'timeout:share-never-settled' });
+    }, 15000);
+    try {
+      shareWorkoutAsFit(session)
+        .then((outcome) => { window.clearTimeout(watchdog); settle(outcome); })
+        .catch((err: unknown) => {
+          window.clearTimeout(watchdog);
+          settle({
+            result: 'downloaded',
+            trace: `chain-err:${err instanceof Error ? err.name : 'unknown'}`,
+          });
         });
-      })
-      .finally(() => setSharing(false));
+    } catch (err: unknown) {
+      window.clearTimeout(watchdog);
+      settle({
+        result: 'downloaded',
+        trace: `sync-throw:${err instanceof Error ? err.name + ':' + err.message : 'unknown'}`,
+      });
+    }
   };
 
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
