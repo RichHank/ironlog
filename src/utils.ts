@@ -35,9 +35,14 @@ export function weightPlaceholder(exerciseKey: string, unit: string): string {
   return isBodyweightExercise(exerciseKey) ? 'BW' : unit;
 }
 
+// Brzycki 1RM estimate. The formula is reliable up to ~10–12 reps and
+// produces nonsense beyond that (at 36 reps it returns 36×weight). Clamp the
+// rep count so high-rep AMRAP sets still produce a believable upper bound.
+const EST_1RM_REP_CAP = 12;
 export function est1RM(weight: number, reps: number): number {
-  if (reps >= 36) return weight;
-  return Math.round(weight * (36 / (37 - reps)));
+  if (reps <= 0) return 0;
+  const r = Math.min(reps, EST_1RM_REP_CAP);
+  return Math.round(weight * (36 / (37 - r)));
 }
 
 export function totalVolume(sessions: WorkoutSession[]): number {
