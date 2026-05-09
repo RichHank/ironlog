@@ -280,9 +280,11 @@ export default function App() {
     const target = history.find(s => s.id === sessionId);
     if (!target) return;
     try {
-      const result = await shareWorkoutAsFit(target);
-      if (result === 'shared') showToast('Sent — pick Garmin Connect from share sheet');
-      else if (result === 'downloaded') showToast('FIT downloaded — upload to Garmin Connect');
+      const { result, trace } = await shareWorkoutAsFit(target);
+      // Diagnostic trace is appended so we can see which MIME path the
+      // browser actually accepted (or none).
+      if (result === 'shared') showToast(`Shared · ${trace}`);
+      else if (result === 'downloaded') showToast(`Downloaded (no share) · ${trace}`);
     } catch (err) {
       showToast(`Share failed: ${err instanceof Error ? err.message : err}`);
     }

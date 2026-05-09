@@ -12,56 +12,62 @@ import type { WorkoutSession } from './types';
 import { encodeWorkoutAsFit, fitFilenameFor } from './fit';
 import { loadSettings } from './storage';
 
-export type ShareResult = 'shared' | 'downloaded' | 'cancelled';
+export interface ShareOutcome {
+  result: 'shared' | 'downloaded' | 'cancelled';
+  /** Diagnostic: which MIMEs were tried and what canShare returned for each. */
+  trace: string;
+}
 
 // Chrome's Web Share API enforces an MIME allowlist for files. The
 // official FIT MIME isn't on it, so canShare({files}) returns false
-// and the share sheet never appears. octet-stream is on the allowlist
-// and Garmin Connect Mobile's intent filter matches the .fit extension
-// regardless, so the receiver behavior is identical.
-const SHARE_MIMES = ['application/vnd.ant.fit', 'application/octet-stream'] as const;
+// silently. Try a chain of MIMEs in order of fidelity → permissiveness.
+// Garmin Connect Mobile's intent filter matches the .fit extension,
+// so receiver behavior is identical regardless of which MIME shipped.
+const SHARE_MIMES = [
+  'application/vnd.ant.fit',
+  'application/octet-stream',
+  'application/zip',
+  'text/plain',
+] as const;
 
 type SharingNavigator = Navigator & {
   canShare?: (data: ShareData) => boolean;
   share?: (data: ShareData) => Promise<void>;
 };
 
-// Cast: TS lib types Uint8Array as Uint8Array<ArrayBufferLike> which
-// doesn't structurally satisfy BlobPart's ArrayBufferView<ArrayBuffer>,
-// but Blob accepts any ArrayBufferView at runtime.
 function fileFor(bytes: Uint8Array, filename: string, mime: string): File {
   return new File([new Blob([bytes as BlobPart], { type: mime })], filename, { type: mime });
 }
 
-async function tryShare(
-  nav: SharingNavigator,
-  file: File,
-): Promise<ShareResult | null> {
-  if (!nav.share || !nav.canShare) return null;
-  const shareData: ShareData = { files: [file], title: 'IronLog Workout' };
-  if (!nav.canShare(shareData)) return null;
-  try {
-    await nav.share(shareData);
-    return 'shared';
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') return 'cancelled';
-    return null;
-  }
-}
-
-export async function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareResult> {
+export async function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome> {
   const settings = loadSettings();
   const bytes = encodeWorkoutAsFit(session, { weightUnit: settings.weightUnit });
   const filename = fitFilenameFor(session);
   const nav = navigator as SharingNavigator;
 
-  for (const mime of SHARE_MIMES) {
-    const result = await tryShare(nav, fileFor(bytes, filename, mime));
-    if (result) return result;
+  const trace: string[] = [];
+  const hasShare = !!nav.share;
+  const hasCanShare = !!nav.canShare;
+  trace.push(`share=${hasShare} canShare=${hasCanShare}`);
+
+  if (hasShare && hasCanShare) {
+    for (const mime of SHARE_MIMES) {
+      const file = fileFor(bytes, filename, mime);
+      const can = nav.canShare!({ files: [file] });
+      trace.push(`${mime}:${can ? 'ok' : 'no'}`);
+      if (!can) continue;
+      try {
+        await nav.share!({ files: [file], title: 'IronLog Workout' });
+        return { result: 'shared', trace: trace.join(' ') };
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return { result: 'cancelled', trace: trace.join(' ') };
+        }
+        trace.push(`share-err:${err instanceof Error ? err.name : 'unknown'}`);
+      }
+    }
   }
 
-  // Download fallback. MIME doesn't matter here — the receiver opens by
-  // file extension.
   const blob = new Blob([bytes as BlobPart], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -71,5 +77,5 @@ export async function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareR
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return 'downloaded';
+  return { result: 'downloaded', trace: trace.join(' ') };
 }
