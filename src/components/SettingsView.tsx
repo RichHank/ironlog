@@ -4,6 +4,7 @@ import { todayStamp } from '../utils';
 import BodyMeasurements from './BodyMeasurements';
 import PlateCalculator from './PlateCalculator';
 import StravaSection from './StravaSection';
+import { getVaporSynth } from '../vaporSynth';
 
 type Props = {
   onShowToast: (msg: string) => void;
@@ -14,6 +15,15 @@ type Tab = 'prefs' | 'body' | 'plates' | 'strava' | 'data';
 export default function SettingsView({ onShowToast }: Props) {
   const [settings, setSettings] = useState(loadSettings);
   const [tab, setTab] = useState<Tab>('prefs');
+  const [musicMuted, setMusicMuted] = useState(() => getVaporSynth().isMuted());
+
+  const toggleMusic = () => {
+    const synth = getVaporSynth();
+    const next = !synth.isMuted();
+    synth.setMuted(next);
+    setMusicMuted(next);
+    if (!next) synth.start().catch(() => {});
+  };
 
   const handleExport = () => {
     downloadFile(`ironlog-${todayStamp()}.json`, exportAllJSON(), 'application/json');
@@ -85,6 +95,21 @@ export default function SettingsView({ onShowToast }: Props) {
                   {d >= 60 ? `${d/60}m` : `${d}s`}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-zinc-50">Vaporwave background loop</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">Procedurally generated chiptune + pad. Plays after first tap.</p>
+              </div>
+              <button
+                onClick={toggleMusic}
+                className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${musicMuted ? 'bg-zinc-800 text-zinc-400' : 'bg-[#ff2aa3] text-white shadow-[0_0_12px_rgba(255,42,163,0.4)]'}`}
+              >
+                {musicMuted ? 'Off' : 'On'}
+              </button>
             </div>
           </div>
         </div>

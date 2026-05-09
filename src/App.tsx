@@ -3,6 +3,7 @@ import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
 import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, loadSettings } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
+import { getVaporSynth } from './vaporSynth';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
 import WorkoutView from './components/WorkoutView';
@@ -30,6 +31,22 @@ export default function App() {
 
   // Setup IndexedDB visibility sync for iOS persistence
   useEffect(() => { setupVisibilitySync(); }, []);
+
+  // Vaporwave background music — auto-start on first user gesture (browser autoplay policy)
+  useEffect(() => {
+    const synth = getVaporSynth();
+    const kickoff = () => {
+      synth.start().catch(() => {});
+      window.removeEventListener('pointerdown', kickoff);
+      window.removeEventListener('keydown', kickoff);
+    };
+    window.addEventListener('pointerdown', kickoff, { once: true });
+    window.addEventListener('keydown', kickoff, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', kickoff);
+      window.removeEventListener('keydown', kickoff);
+    };
+  }, []);
 
   // Register service worker
   useEffect(() => {
