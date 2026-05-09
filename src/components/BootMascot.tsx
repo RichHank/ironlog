@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
-// 4-frame loop: arms-down, arms-up, arms-down, arms-up — with motion lines.
-// Runs across the screen via a single CSS keyframe (see index.css .mascot).
+// 4-frame curl cycle. Body anchored centre-column; the [] dumbbells travel
+// from hip-level (rest) → mid → shoulder-level (top of curl) → mid → repeat.
+// Each frame is 5 cols × 5 lines so monospace alignment stays clean.
 const FRAMES = [
-  '   ( o )\n   /|=|\\\n  /=| |=\\\n   |   |\n   /   \\',
-  '  \\( o )/\n   =|=|=\n    | |\n   |   |\n   /   \\',
-  '   ( o )\n   /|=|\\\n  /=| |=\\\n   |   |\n   \\   /',
-  '  \\( o )/\n   =|=|=\n    | |\n   |   |\n   \\   /',
+  '  o  \n /|\\ \n  |  \n[] []\n / \\ ', // arms down, weights at hip
+  '  o  \n /|\\ \n[]|[]\n  |  \n / \\ ', // mid-curl
+  '  o  \n[]|[]\n  |  \n  |  \n / \\ ', // weights at shoulder
+  '  o  \n /|\\ \n[]|[]\n  |  \n / \\ ', // mid-descent
 ];
 
 const FRAME_MS = 140;
