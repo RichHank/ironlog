@@ -61,8 +61,11 @@ export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome
   const filename = fitFilenameFor(session);
   const nav = navigator as SharingNavigator;
 
-  const share = nav.share;
-  const canShare = nav.canShare;
+  // Navigator methods need `this` bound to navigator. Detaching them into
+  // bare consts (`const share = nav.share`) strips the binding and every
+  // call throws TypeError: Illegal invocation. .bind(nav) reattaches it.
+  const share = nav.share?.bind(nav);
+  const canShare = nav.canShare?.bind(nav);
   const trace: string[] = [`share=${!!share} canShare=${!!canShare}`];
 
   if (!share || !canShare) {
