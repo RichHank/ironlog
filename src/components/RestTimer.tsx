@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExerciseLog } from '../types';
-import { useWakeLock } from '../hooks/useWakeLock';
 
 const PRESETS = [45, 60, 90, 120, 150, 180];
 
@@ -23,13 +22,10 @@ type Props = {
 };
 
 export default function RestTimer({ timer, activeExercise }: Props) {
-  const wakeLock = useWakeLock();
+  // Screen wake-lock is held by App.tsx for the whole active session,
+  // so it covers the timer view and the dead time between sets.
   const prevSeconds = useRef(timer.displaySeconds);
   const [glitch, setGlitch] = useState(false);
-
-  useEffect(() => {
-    if (timer.isRunning) wakeLock.acquire(); else wakeLock.release();
-  }, [timer.isRunning, wakeLock]);
 
   useEffect(() => {
     const justExpired = prevSeconds.current > 0 && timer.displaySeconds === 0;

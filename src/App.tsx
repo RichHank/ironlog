@@ -6,6 +6,7 @@ import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushW
 import { getVaporSynth } from './vaporSynth';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
+import { useWakeLock } from './hooks/useWakeLock';
 import WorkoutView from './components/WorkoutView';
 import RoutinesView from './components/RoutinesView';
 import HistoryView from './components/HistoryView';
@@ -29,6 +30,14 @@ export default function App() {
   const settings = loadSettings();
   const timer = useTimer(settings.restTimerDuration);
   const iosPWA = useIOSPWA();
+  const wakeLock = useWakeLock();
+
+  // Hold the screen-wake lock for the whole duration of an active workout.
+  // The dead time between sets (chalking up, untangling a band) is when iOS
+  // would otherwise dim the screen — exactly when users want it on.
+  useEffect(() => {
+    if (session) wakeLock.acquire(); else wakeLock.release();
+  }, [session, wakeLock]);
 
   // Setup IndexedDB visibility sync for iOS persistence
   useEffect(() => { setupVisibilitySync(); }, []);
