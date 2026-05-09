@@ -2,6 +2,7 @@ import {
   WorkoutSession, ExerciseLog, WorkoutSet, Routine,
   PersonalRecord, BodyMeasurement, AppSettings,
 } from './types';
+import { est1RM } from './utils';
 
 export function generateId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -104,61 +105,101 @@ function savePRs(prs: PersonalRecord[]): void {
   writeJSON(PRS_KEY, prs);
 }
 
+// PR ids are deterministic — exerciseKey + type — so identity stays stable
+// across recalcs. Only `value` / `achievedAt` / `sessionId` change when a
+// record is broken.
+function prId(exerciseKey: string, type: PersonalRecord['type']): string {
+  return `${exerciseKey}::${type}`;
+}
+
+type PRCandidate = {
+  exerciseKey: string;
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  completedAt: number;
+  sessionId: string;
+};
+
+function collectCandidates(session: WorkoutSession): PRCandidate[] {
+  const out: PRCandidate[] = [];
+  for (const ex of session.exercises) {
+    for (const set of ex.sets) {
+      if (set.weight && set.weight > 0 && set.reps && set.reps > 0) {
+        out.push({
+          exerciseKey: ex.exerciseKey,
+          exerciseName: ex.name,
+          weight: set.weight,
+          reps: set.reps,
+          completedAt: set.completedAt,
+          sessionId: session.id,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+function bestFromCandidates(candidates: PRCandidate[], unit: string): Map<string, PersonalRecord> {
+  const best = new Map<string, PersonalRecord>();
+  const consider = (rec: PersonalRecord) => {
+    const existing = best.get(rec.id);
+    if (!existing || rec.value > existing.value) best.set(rec.id, rec);
+  };
+  for (const c of candidates) {
+    consider({
+      id: prId(c.exerciseKey, 'max_weight'),
+      exerciseKey: c.exerciseKey, exerciseName: c.exerciseName,
+      type: 'max_weight', value: c.weight, unit,
+      achievedAt: c.completedAt, sessionId: c.sessionId,
+    });
+    consider({
+      id: prId(c.exerciseKey, 'max_reps'),
+      exerciseKey: c.exerciseKey, exerciseName: c.exerciseName,
+      type: 'max_reps', value: c.reps, unit: `at ${c.weight}${unit}`,
+      achievedAt: c.completedAt, sessionId: c.sessionId,
+    });
+    consider({
+      id: prId(c.exerciseKey, 'max_volume'),
+      exerciseKey: c.exerciseKey, exerciseName: c.exerciseName,
+      type: 'max_volume', value: c.weight * c.reps, unit,
+      achievedAt: c.completedAt, sessionId: c.sessionId,
+    });
+    consider({
+      id: prId(c.exerciseKey, 'est_1rm'),
+      exerciseKey: c.exerciseKey, exerciseName: c.exerciseName,
+      type: 'est_1rm', value: est1RM(c.weight, c.reps), unit,
+      achievedAt: c.completedAt, sessionId: c.sessionId,
+    });
+  }
+  return best;
+}
+
+// Full recalc — used on delete or in-place edit, where a previous PR may have
+// disappeared and we have to re-walk every session to find the next-best.
 export function recalcPRs(sessions: WorkoutSession[]): PersonalRecord[] {
   const unit = loadSettings().weightUnit;
-  const prs = new Map<string, PersonalRecord[]>();
-
-  for (const session of sessions) {
-    for (const ex of session.exercises) {
-      const key = ex.exerciseKey;
-      const existing = prs.get(key) ?? [];
-      const all: PersonalRecord[] = [...existing];
-
-      for (const set of ex.sets) {
-        if (set.weight && set.weight > 0 && set.reps && set.reps > 0) {
-          const e1rm = set.weight * (36 / (37 - Math.min(set.reps, 36)));
-          all.push({
-            id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'est_1rm', value: Math.round(e1rm), unit,
-            achievedAt: set.completedAt, sessionId: session.id,
-          });
-          all.push({
-            id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_weight', value: set.weight, unit,
-            achievedAt: set.completedAt, sessionId: session.id,
-          });
-        }
-        if (set.reps && set.reps > 0 && set.weight && set.weight > 0) {
-          all.push({
-            id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_reps', value: set.reps, unit: `at ${set.weight}${unit}`,
-            achievedAt: set.completedAt, sessionId: session.id,
-          });
-        }
-        if (set.weight && set.reps && set.weight > 0 && set.reps > 0) {
-          all.push({
-            id: generateId(), exerciseKey: key, exerciseName: ex.name,
-            type: 'max_volume', value: set.weight * set.reps, unit,
-            achievedAt: set.completedAt, sessionId: session.id,
-          });
-        }
-      }
-      prs.set(key, all);
-    }
-  }
-
-  const best: PersonalRecord[] = [];
-  for (const [, entries] of prs) {
-    const types = ['max_weight', 'max_reps', 'max_volume', 'est_1rm'] as const;
-    for (const t of types) {
-      const typed = entries.filter(e => e.type === t);
-      if (typed.length > 0) {
-        best.push(typed.reduce((a, b) => a.value > b.value ? a : b));
-      }
-    }
-  }
+  const all = sessions.flatMap(collectCandidates);
+  const best = Array.from(bestFromCandidates(all, unit).values());
   savePRs(best);
   return best;
+}
+
+// Incremental — the common path after `addWorkout`. Compares only this
+// session's candidates against the persisted bests and replaces them where
+// beaten. O(sets-in-session) instead of O(total-sets-ever).
+export function updatePRsAfterAdd(session: WorkoutSession): PersonalRecord[] {
+  const unit = loadSettings().weightUnit;
+  const current = loadPRs();
+  const byId = new Map(current.map(p => [p.id, p]));
+  const fromSession = bestFromCandidates(collectCandidates(session), unit);
+  for (const [id, fresh] of fromSession) {
+    const existing = byId.get(id);
+    if (!existing || fresh.value > existing.value) byId.set(id, fresh);
+  }
+  const next = Array.from(byId.values());
+  savePRs(next);
+  return next;
 }
 
 export function getPRsForExercise(exerciseKey: string): PersonalRecord[] {
