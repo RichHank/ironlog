@@ -1,9 +1,9 @@
 // IronLog Service Worker
 // Cache-first strategy for app shell, network-first for API calls.
 
-// moydd8q8 is replaced at build time by the sw-build-id Vite plugin so
+// moydytyt is replaced at build time by the sw-build-id Vite plugin so
 // every deploy gets a fresh cache and the activate handler purges the old one.
-const CACHE = 'ironlog-moydd8q8';
+const CACHE = 'ironlog-moydytyt';
 const APP_SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
