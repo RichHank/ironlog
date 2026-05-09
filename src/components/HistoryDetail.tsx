@@ -8,12 +8,19 @@ type Props = {
   onBack: () => void;
   onDelete: (id: string) => void;
   onUpdateSet: (sessionId: string, exerciseId: string, set: WorkoutSet) => void;
+  onPushToStrava: (sessionId: string) => Promise<void>;
 };
 
-export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }: Props) {
+export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava }: Props) {
   const unit = loadSettings().weightUnit;
   const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
+  const [pushing, setPushing] = useState(false);
+
+  const handlePush = async () => {
+    setPushing(true);
+    try { await onPushToStrava(session.id); } finally { setPushing(false); }
+  };
 
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
   const totalVolume = session.exercises.reduce((s, e) =>
@@ -44,7 +51,27 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet }
       <div className="safe-area-top border-b border-zinc-800 bg-zinc-950 px-4 pb-3">
         <div className="flex items-center justify-between gap-3 mb-1">
           <button onClick={onBack} className="min-h-touch text-blue-400 font-semibold text-sm">← Back</button>
-          <button onClick={() => onDelete(session.id)} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
+          <div className="flex gap-2">
+            {session.stravaActivityId ? (
+              <a
+                href={`https://www.strava.com/activities/${session.stravaActivityId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="min-h-touch rounded-lg bg-[#fc4c02] px-3 py-1.5 text-xs font-bold text-white"
+              >
+                On Strava ↗
+              </a>
+            ) : (
+              <button
+                onClick={handlePush}
+                disabled={pushing}
+                className="min-h-touch rounded-lg bg-[#fc4c02] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+              >
+                {pushing ? 'Pushing…' : 'Push to Strava'}
+              </button>
+            )}
+            <button onClick={() => onDelete(session.id)} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
+          </div>
         </div>
         <h2 className="text-xl font-black text-zinc-50">{session.name ?? formatDate(session.startedAt)}</h2>
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">

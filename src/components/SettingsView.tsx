@@ -3,12 +3,13 @@ import { exportAllJSON, exportHistoryCSV, downloadFile, clearAllData, loadSettin
 import { todayStamp } from '../utils';
 import BodyMeasurements from './BodyMeasurements';
 import PlateCalculator from './PlateCalculator';
+import StravaSection from './StravaSection';
 
 type Props = {
   onShowToast: (msg: string) => void;
 };
 
-type Tab = 'prefs' | 'body' | 'plates' | 'data';
+type Tab = 'prefs' | 'body' | 'plates' | 'strava' | 'data';
 
 export default function SettingsView({ onShowToast }: Props) {
   const [settings, setSettings] = useState(loadSettings);
@@ -51,6 +52,7 @@ export default function SettingsView({ onShowToast }: Props) {
           { key: 'prefs', label: 'Preferences' },
           { key: 'body', label: 'Body Weight' },
           { key: 'plates', label: 'Plate Calc' },
+          { key: 'strava', label: 'Strava' },
           { key: 'data', label: 'Data' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -91,6 +93,8 @@ export default function SettingsView({ onShowToast }: Props) {
       {tab === 'body' && <BodyMeasurements onShowToast={onShowToast} />}
 
       {tab === 'plates' && <PlateCalculator unit={settings.weightUnit} />}
+
+      {tab === 'strava' && <StravaSection onShowToast={onShowToast} />}
 
       {tab === 'data' && (
         <div className="space-y-4">
