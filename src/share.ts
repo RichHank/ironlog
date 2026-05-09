@@ -14,15 +14,13 @@ import { loadSettings } from './storage';
 
 export interface ShareOutcome {
   result: 'shared' | 'downloaded' | 'cancelled';
-  /** Diagnostic: which MIMEs were tried and what canShare returned for each. */
+  /** Diagnostic: which MIMEs canShare accepted, plus any errors. */
   trace: string;
 }
 
-// Chrome's Web Share API enforces an MIME allowlist for files. The
-// official FIT MIME isn't on it, so canShare({files}) returns false
-// silently. Try a chain of MIMEs in order of fidelity → permissiveness.
-// Garmin Connect Mobile's intent filter matches the .fit extension,
-// so receiver behavior is identical regardless of which MIME shipped.
+// Try MIMEs in order of fidelity → permissiveness. Garmin Connect Mobile's
+// Android intent filter matches the .fit extension, so the receiver
+// behavior is identical regardless of which MIME ends up on the wire.
 const SHARE_MIMES = [
   'application/vnd.ant.fit',
   'application/octet-stream',
@@ -39,35 +37,7 @@ function fileFor(bytes: Uint8Array, filename: string, mime: string): File {
   return new File([new Blob([bytes as BlobPart], { type: mime })], filename, { type: mime });
 }
 
-export async function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome> {
-  const settings = loadSettings();
-  const bytes = encodeWorkoutAsFit(session, { weightUnit: settings.weightUnit });
-  const filename = fitFilenameFor(session);
-  const nav = navigator as SharingNavigator;
-
-  const trace: string[] = [];
-  const hasShare = !!nav.share;
-  const hasCanShare = !!nav.canShare;
-  trace.push(`share=${hasShare} canShare=${hasCanShare}`);
-
-  if (hasShare && hasCanShare) {
-    for (const mime of SHARE_MIMES) {
-      const file = fileFor(bytes, filename, mime);
-      const can = nav.canShare!({ files: [file] });
-      trace.push(`${mime}:${can ? 'ok' : 'no'}`);
-      if (!can) continue;
-      try {
-        await nav.share!({ files: [file], title: 'IronLog Workout' });
-        return { result: 'shared', trace: trace.join(' ') };
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          return { result: 'cancelled', trace: trace.join(' ') };
-        }
-        trace.push(`share-err:${err instanceof Error ? err.name : 'unknown'}`);
-      }
-    }
-  }
-
+function triggerDownload(bytes: Uint8Array, filename: string): void {
   const blob = new Blob([bytes as BlobPart], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -77,5 +47,50 @@ export async function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareO
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return { result: 'downloaded', trace: trace.join(' ') };
+}
+
+// CRITICAL: this is a non-async function and runs synchronously up to
+// the navigator.share() call. The Promise from share() is then chained
+// via .then/.catch. This preserves Chrome's transient user activation
+// across the whole click-to-share path. Wrapping any of this in
+// `async/await` causes Chrome to throw NotAllowedError because each
+// `await` is treated as having let activation expire.
+export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome> {
+  const settings = loadSettings();
+  const bytes = encodeWorkoutAsFit(session, { weightUnit: settings.weightUnit });
+  const filename = fitFilenameFor(session);
+  const nav = navigator as SharingNavigator;
+
+  const share = nav.share;
+  const canShare = nav.canShare;
+  const trace: string[] = [`share=${!!share} canShare=${!!canShare}`];
+
+  if (!share || !canShare) {
+    triggerDownload(bytes, filename);
+    return Promise.resolve({ result: 'downloaded', trace: trace.join(' ') });
+  }
+
+  let chosen: File | null = null;
+  for (const mime of SHARE_MIMES) {
+    const file = fileFor(bytes, filename, mime);
+    const can = canShare({ files: [file] });
+    trace.push(`${mime}:${can ? 'ok' : 'no'}`);
+    if (can) { chosen = file; break; }
+  }
+
+  if (chosen === null) {
+    triggerDownload(bytes, filename);
+    return Promise.resolve({ result: 'downloaded', trace: trace.join(' ') });
+  }
+
+  return share({ files: [chosen], title: 'IronLog Workout' })
+    .then((): ShareOutcome => ({ result: 'shared', trace: trace.join(' ') }))
+    .catch((err: unknown): ShareOutcome => {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return { result: 'cancelled', trace: trace.join(' ') };
+      }
+      trace.push(`share-err:${err instanceof Error ? err.name : 'unknown'}`);
+      triggerDownload(bytes, filename);
+      return { result: 'downloaded', trace: trace.join(' ') };
+    });
 }

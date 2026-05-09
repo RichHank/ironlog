@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { formatDate, formatTime, formatDuration, est1RM, formatWeightCell } from '../utils';
 import { loadSettings } from '../storage';
+import { shareWorkoutAsFit, type ShareOutcome } from '../share';
 
 type Props = {
   session: WorkoutSession;
@@ -9,10 +10,10 @@ type Props = {
   onDelete: (id: string) => void;
   onUpdateSet: (sessionId: string, exerciseId: string, set: WorkoutSet) => void;
   onPushToStrava: (sessionId: string) => Promise<void>;
-  onShareFit: (sessionId: string) => Promise<void>;
+  onShareDone: (outcome: ShareOutcome) => void;
 };
 
-export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava, onShareFit }: Props) {
+export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava, onShareDone }: Props) {
   const unit = loadSettings().weightUnit;
   const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
@@ -24,9 +25,21 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
     try { await onPushToStrava(session.id); } finally { setPushing(false); }
   };
 
-  const handleShare = async () => {
+  // CRITICAL: this is a non-async handler so navigator.share() runs in the
+  // same synchronous tick as the user's tap, preserving Chrome's transient
+  // user activation. Wrapping the chain in async/await across multiple
+  // functions caused share() to throw NotAllowedError on Pixel/Chrome.
+  const handleShare = () => {
     setSharing(true);
-    try { await onShareFit(session.id); } finally { setSharing(false); }
+    shareWorkoutAsFit(session)
+      .then(onShareDone)
+      .catch((err: unknown) => {
+        onShareDone({
+          result: 'downloaded',
+          trace: `unexpected:${err instanceof Error ? err.name : 'unknown'}`,
+        });
+      })
+      .finally(() => setSharing(false));
   };
 
   const totalSets = session.exercises.reduce((s, e) => s + e.sets.length, 0);
