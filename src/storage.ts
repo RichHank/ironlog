@@ -203,8 +203,11 @@ export function exportAllJSON(): string {
 
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return '';
-  const s = String(v);
-  if (/^[=+\-@]/.test(s)) return `'${s}`;
+  let s = String(v);
+  // Defang spreadsheet formulas before quote-wrapping; previous early return
+  // skipped quote-wrapping for cells that started with =/+/-/@ AND contained
+  // commas or newlines, producing invalid CSV.
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
