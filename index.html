@@ -19,10 +19,8 @@
   <!-- Manifest -->
   <link rel="manifest" href="/manifest.json" />
 
-  <!-- VT323 — vaporwave terminal font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap" />
+  <!-- VT323 — vaporwave terminal font, self-hosted so the PWA works offline -->
+  <link rel="preload" href="./fonts/VT323-latin.woff2" as="font" type="font/woff2" crossorigin />
 
   <!-- Splash screens for common iPhone sizes -->
   <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/splash-iphone16.png" />
