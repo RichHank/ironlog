@@ -76,9 +76,14 @@ export default function StravaSection({ onShowToast }: Props) {
           </p>
           <button
             onClick={beginOAuth}
-            className="w-full rounded-lg bg-[#fc4c02] py-3 text-sm font-bold text-white hover:bg-[#e04400]"
+            className="block mx-auto"
+            aria-label="Connect with Strava"
           >
-            Connect with Strava
+            <img
+              src={`${import.meta.env.BASE_URL}strava/btn_strava_connect_with_orange.svg`}
+              alt="Connect with Strava"
+              className="h-12"
+            />
           </button>
         </div>
       </div>
