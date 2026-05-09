@@ -22,9 +22,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Exo 2', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        display: ['Orbitron', 'sans-serif'],
-        mono: ['Share Tech Mono', 'Consolas', 'monospace'],
+        sans: ['VT323', 'ui-monospace', 'Consolas', 'monospace'],
+        display: ['VT323', 'monospace'],
+        mono: ['VT323', 'ui-monospace', 'Consolas', 'monospace'],
         pixel: ['Press Start 2P', 'cursive'],
       },
       backgroundImage: {
