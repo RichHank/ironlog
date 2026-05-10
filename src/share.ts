@@ -14,8 +14,16 @@ import { loadSettings } from './storage';
 
 export interface ShareOutcome {
   result: 'shared' | 'downloaded' | 'cancelled';
+  platform: 'android' | 'ios' | 'other';
   /** Diagnostic: which MIMEs canShare accepted, plus any errors. */
   trace: string;
+}
+
+function detectPlatform(): 'android' | 'ios' | 'other' {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'android';
+  if (/ipad|iphone|ipod/i.test(ua)) return 'ios';
+  return 'other';
 }
 
 // Try MIMEs in order of fidelity → permissiveness. Garmin Connect Mobile's
@@ -59,7 +67,18 @@ export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome
   const settings = loadSettings();
   const bytes = encodeWorkoutAsFit(session, { weightUnit: settings.weightUnit });
   const filename = fitFilenameFor(session);
+  const platform = detectPlatform();
   const nav = navigator as SharingNavigator;
+
+  // Garmin Connect on Android only registers ACTION_VIEW (open with), never
+  // ACTION_SEND (share sheet). The Web Share API fires ACTION_SEND, so Garmin
+  // Connect will never appear in the Android share sheet regardless of MIME
+  // type. Skip the share sheet on Android and download directly so the user
+  // can open the file from Downloads with "Open with Garmin Connect."
+  if (platform === 'android') {
+    triggerDownload(bytes, filename);
+    return Promise.resolve({ result: 'downloaded', platform, trace: 'android-direct-download' });
+  }
 
   // Navigator methods need `this` bound to navigator. Detaching them into
   // bare consts (`const share = nav.share`) strips the binding and every
@@ -70,7 +89,7 @@ export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome
 
   if (!share || !canShare) {
     triggerDownload(bytes, filename);
-    return Promise.resolve({ result: 'downloaded', trace: trace.join(' ') });
+    return Promise.resolve({ result: 'downloaded', platform, trace: trace.join(' ') });
   }
 
   let chosen: File | null = null;
@@ -83,17 +102,17 @@ export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome
 
   if (chosen === null) {
     triggerDownload(bytes, filename);
-    return Promise.resolve({ result: 'downloaded', trace: trace.join(' ') });
+    return Promise.resolve({ result: 'downloaded', platform, trace: trace.join(' ') });
   }
 
   return share({ files: [chosen], title: 'IronLog Workout' })
-    .then((): ShareOutcome => ({ result: 'shared', trace: trace.join(' ') }))
+    .then((): ShareOutcome => ({ result: 'shared', platform, trace: trace.join(' ') }))
     .catch((err: unknown): ShareOutcome => {
       if (err instanceof Error && err.name === 'AbortError') {
-        return { result: 'cancelled', trace: trace.join(' ') };
+        return { result: 'cancelled', platform, trace: trace.join(' ') };
       }
       trace.push(`share-err:${err instanceof Error ? err.name : 'unknown'}`);
       triggerDownload(bytes, filename);
-      return { result: 'downloaded', trace: trace.join(' ') };
+      return { result: 'downloaded', platform, trace: trace.join(' ') };
     });
 }

@@ -19,6 +19,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
   const [pushing, setPushing] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showGarminHelp, setShowGarminHelp] = useState(false);
 
   const handlePush = async () => {
     setPushing(true);
@@ -46,11 +47,20 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
     }, 15000);
     try {
       shareWorkoutAsFit(session)
-        .then((outcome) => { window.clearTimeout(watchdog); settle(outcome); })
+        .then((outcome) => {
+          window.clearTimeout(watchdog);
+          if (outcome.result === 'downloaded' && outcome.platform === 'android') {
+            setSharing(false);
+            setShowGarminHelp(true);
+          } else {
+            settle(outcome);
+          }
+        })
         .catch((err: unknown) => {
           window.clearTimeout(watchdog);
           settle({
             result: 'downloaded',
+            platform: 'other',
             trace: `chain-err:${err instanceof Error ? err.name : 'unknown'}`,
           });
         });
@@ -58,6 +68,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
       window.clearTimeout(watchdog);
       settle({
         result: 'downloaded',
+        platform: 'other',
         trace: `sync-throw:${err instanceof Error ? err.name + ':' + err.message : 'unknown'}`,
       });
     }
@@ -122,6 +133,33 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
             <button onClick={() => onDelete(session.id)} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
           </div>
         </div>
+        {showGarminHelp && (
+          <div className="mt-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-3 text-xs text-cyan-300">
+            <p className="font-bold mb-1">FIT file downloaded!</p>
+            <p className="mb-2 text-cyan-400/80">Garmin Connect doesn&apos;t accept shared files on Android. To import:</p>
+            <ol className="list-decimal list-inside space-y-1 text-cyan-400/80 mb-3">
+              <li>Open your <span className="text-cyan-300 font-semibold">Downloads</span> folder</li>
+              <li>Tap the <span className="text-cyan-300 font-semibold">.fit</span> file</li>
+              <li>Choose <span className="text-cyan-300 font-semibold">Open with → Garmin Connect</span></li>
+            </ol>
+            <div className="flex gap-2">
+              <a
+                href="https://connect.garmin.com/modern/import-data"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded bg-cyan-600 px-3 py-1.5 font-bold text-white"
+              >
+                Or upload at Garmin Connect ↗
+              </a>
+              <button
+                onClick={() => setShowGarminHelp(false)}
+                className="rounded bg-zinc-700 px-3 py-1.5 text-zinc-300"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
         <h2 className="text-xl font-black text-zinc-50">{session.name ?? formatDate(session.startedAt)}</h2>
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">
           <span>{formatDate(session.startedAt)} · {formatTime(session.startedAt)}</span>
