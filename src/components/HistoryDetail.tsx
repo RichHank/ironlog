@@ -43,7 +43,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
     // (e.g. silently swallowed by the PWA standalone context), unstick
     // the button and report a timeout so we can see what's going on.
     const watchdog = window.setTimeout(() => {
-      settle({ result: 'downloaded', trace: 'timeout:share-never-settled' });
+      settle({ result: 'downloaded', platform: 'other', trace: 'timeout:share-never-settled' });
     }, 15000);
     try {
       shareWorkoutAsFit(session)
