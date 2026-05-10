@@ -94,21 +94,27 @@ export default {
 
     try {
       if (path === '/strava/exchange' && request.method === 'POST') {
-        const { code } = await request.json<{ code?: string }>();
+        const body = await request.text();
+        if (body.length > 16384) return json({ error: 'request too large' }, { status: 413 }, cors);
+        const { code } = JSON.parse(body) as { code?: string };
         if (!code) return json({ error: 'missing code' }, { status: 400 }, cors);
         const tokens = await exchangeCode(env, code);
         return json(tokens, { status: 200 }, cors);
       }
 
       if (path === '/strava/refresh' && request.method === 'POST') {
-        const { refresh_token } = await request.json<{ refresh_token?: string }>();
+        const body = await request.text();
+        if (body.length > 16384) return json({ error: 'request too large' }, { status: 413 }, cors);
+        const { refresh_token } = JSON.parse(body) as { refresh_token?: string };
         if (!refresh_token) return json({ error: 'missing refresh_token' }, { status: 400 }, cors);
         const tokens = await refreshToken(env, refresh_token);
         return json(tokens, { status: 200 }, cors);
       }
 
       if (path === '/strava/deauthorize' && request.method === 'POST') {
-        const { access_token } = await request.json<{ access_token?: string }>();
+        const body = await request.text();
+        if (body.length > 16384) return json({ error: 'request too large' }, { status: 413 }, cors);
+        const { access_token } = JSON.parse(body) as { access_token?: string };
         if (!access_token) return json({ error: 'missing access_token' }, { status: 400 }, cors);
         await deauthorize(access_token);
         return json({ ok: true }, { status: 200 }, cors);
@@ -119,8 +125,8 @@ export default {
       }
 
       return json({ error: 'not found' }, { status: 404 }, cors);
-    } catch (err) {
-      return json({ error: String(err instanceof Error ? err.message : err) }, { status: 502 }, cors);
+    } catch {
+      return json({ error: 'upstream service unavailable' }, { status: 502 }, cors);
     }
   },
 };

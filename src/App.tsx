@@ -343,6 +343,30 @@ export default function App() {
     recalcPRs(updated);
   }, [history]);
 
+  const deleteHistorySet = useCallback((sessionId: string, exerciseId: string, setId: string) => {
+    const updated = history.map(s => {
+      if (s.id !== sessionId) return s;
+      const exercises = s.exercises
+        .map(ex => ex.id === exerciseId ? {
+          ...ex,
+          sets: ex.sets.filter(st => st.id !== setId),
+        } : ex)
+        .filter(ex => ex.sets.length > 0 || ex.notes);
+      if (exercises.length === 0) return null;
+      return { ...s, exercises };
+    }).filter((s): s is WorkoutSession => s !== null);
+
+    if (updated.length === history.length - 1) {
+      showToast('Workout deleted (last set removed)');
+      setHistoryDetailId(null);
+    } else {
+      showToast('Set deleted');
+    }
+    setHistory(updated);
+    saveHistory(updated);
+    recalcPRs(updated);
+  }, [history, showToast]);
+
   const historyDetail = useMemo(() =>
     historyDetailId ? history.find(s => s.id === historyDetailId) ?? null : null
   , [history, historyDetailId]);
@@ -354,6 +378,7 @@ export default function App() {
         onBack={() => setHistoryDetailId(null)}
         onDelete={deleteHistoryWorkout}
         onUpdateSet={updateHistorySet}
+        onDeleteSet={deleteHistorySet}
         onPushToStrava={pushHistoryToStrava}
         onShareDone={handleShareDone}
       />

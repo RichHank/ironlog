@@ -9,11 +9,12 @@ type Props = {
   onBack: () => void;
   onDelete: (id: string) => void;
   onUpdateSet: (sessionId: string, exerciseId: string, set: WorkoutSet) => void;
+  onDeleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
   onPushToStrava: (sessionId: string) => Promise<void>;
   onShareDone: (outcome: ShareOutcome) => void;
 };
 
-export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onPushToStrava, onShareDone }: Props) {
+export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onDeleteSet, onPushToStrava, onShareDone }: Props) {
   const unit = loadSettings().weightUnit;
   const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
@@ -244,7 +245,10 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                           <td className="py-1.5 px-2 text-right font-mono text-zinc-500">{set.rpe ? `@${set.rpe}` : '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-blue-400">{e1rm > 0 ? e1rm : ''}</td>
                           <td className="py-1.5 px-1 text-right">
-                            <button onClick={() => startEdit(ex.id, set)} className="text-xs text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">Edit</button>
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => startEdit(ex.id, set)} className="text-xs text-zinc-600 hover:text-zinc-300">Edit</button>
+                              <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="text-xs text-zinc-600 hover:text-red-400">Del</button>
+                            </div>
                           </td>
                         </tr>
                       );
