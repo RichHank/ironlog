@@ -276,13 +276,10 @@ export default function App() {
     }
   }, [history, showToast]);
 
-  const handleShareDone = useCallback(({ result, trace }: ShareOutcome) => {
+  const handleShareDone = useCallback(({ result }: ShareOutcome) => {
     if (result === 'shared') showToast('Shared!');
     else if (result === 'cancelled') showToast('Cancelled');
-    else {
-      navigator.clipboard?.writeText(trace).catch(() => {});
-      window.alert(`Downloaded (share unavailable)\n\nDiagnostic:\n${trace}\n\n(Copied to clipboard.)`);
-    }
+    else showToast('FIT file downloaded');
   }, [showToast]);
 
   const discardWorkout = useCallback(() => {
