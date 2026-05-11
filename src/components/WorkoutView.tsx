@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { loadSettings } from '../storage';
-import { est1RM, formatTime, formatWeightCell, handleHaptic } from '../utils';
+import { est1RM, formatTime, formatWeightCell } from '../utils';
 import { playClick, playSuccess, playError, playPowerUp } from '../audio';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
