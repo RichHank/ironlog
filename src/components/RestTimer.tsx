@@ -49,24 +49,38 @@ export default function RestTimer({ timer, activeExercise }: Props) {
         )}
       </div>
 
-      {/* Progress bar */}
-      {timer.isRunning && (
-        <div className="w-full h-2 bg-[#12121A] rounded-full mb-3 overflow-hidden border border-[#ff2aa3]/10">
-          <div
-            className="h-full rounded-full transition-all duration-300 ease-linear bg-gradient-to-r from-[#ff2aa3] to-[#00f5ff]"
-            style={{ width: `${100 - progress}%` }}
+      <div className="flex items-center gap-4">
+        {/* Analog Neon Clock */}
+        <div className={`relative w-[70px] h-[70px] flex-shrink-0 flex items-center justify-center rounded-full border-[3px] shadow-inner bg-[#05050A] ${
+          isUrgent ? 'border-[#fe4450]/60 shadow-[0_0_15px_rgba(254,68,80,0.4)]' : 'border-[#00f5ff]/40 shadow-[0_0_15px_rgba(0,245,255,0.2)]'
+        }`}>
+          {/* Tick marks */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,42,163,0.3)" strokeWidth="4" strokeDasharray="2 11.8" />
+          </svg>
+          {/* Sweeping Hand */}
+          <div 
+            className={`absolute w-1.5 h-[40%] rounded-full origin-bottom z-10 ${
+              isUrgent ? 'bg-[#fe4450] shadow-[0_0_10px_rgba(254,68,80,0.8)]' : 'bg-[#ff2aa3] shadow-[0_0_10px_rgba(255,42,163,0.8)]'
+            }`}
+            style={{ 
+               bottom: '50%', 
+               left: 'calc(50% - 3px)', 
+               transform: `rotate(${timer.duration > 0 ? 360 - ((timer.displaySeconds / timer.duration) * 360) : 0}deg)`,
+               transition: timer.isRunning ? 'transform 1s linear' : 'none'
+            }}
           />
+          {/* Center Pin */}
+          <div className="absolute w-2.5 h-2.5 rounded-full bg-[#00f5ff] shadow-[0_0_8px_rgba(0,245,255,0.9)] z-20" />
         </div>
-      )}
 
-      <div className="flex items-center gap-3">
-        {/* Giant neon timer display */}
-        <div className={`min-w-[100px] rounded-xl border px-4 py-3 text-center transition-all duration-200 ${
+        {/* Digital display */}
+        <div className={`min-w-[90px] rounded-sm border px-3 py-2 text-center transition-all duration-200 ${
           isUrgent
             ? 'border-[#fe4450]/60 bg-[#fe4450]/10 shadow-[0_0_20px_rgba(254,68,80,0.3)]'
             : 'border-[#00f5ff]/30 bg-[#00f5ff]/5 shadow-[0_0_12px_rgba(0,245,255,0.1)]'
         } ${glitch ? 'animate-pulse' : ''}`}>
-          <span className={`text-3xl font-mono font-bold tabular-nums ${
+          <span className={`text-2xl font-mono font-bold tabular-nums tracking-widest ${
             isUrgent
               ? 'text-[#fe4450] [text-shadow:0_0_10px_rgba(254,68,80,0.8),0_0_20px_rgba(254,68,80,0.4)]'
               : 'text-[#00f5ff] [text-shadow:0_0_10px_rgba(0,245,255,0.6),0_0_20px_rgba(0,245,255,0.3)]'

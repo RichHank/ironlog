@@ -56,7 +56,7 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
 
       {routines.length === 0 ? (
         <div className="py-16 text-center">
-          <span className="text-4xl">📁</span>
+          <img src={`${import.meta.env.BASE_URL}icons/nav_routines.png`} alt="Folder" className="w-16 h-16 mx-auto mb-4 object-contain mix-blend-screen" />
           <p className="mt-3 text-sm text-vapor-muted">No routines yet</p>
           <p className="text-xs text-vapor-muted mt-1">Create a template to quickly start workouts</p>
         </div>

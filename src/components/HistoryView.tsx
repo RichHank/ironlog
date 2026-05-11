@@ -27,7 +27,7 @@ export default function HistoryView({ sessions, onSelect }: Props) {
       <div className="px-3 pt-4 sm:px-4">
         <p className="text-xs text-vapor-muted uppercase tracking-wider">History</p>
         <div className="py-16 text-center">
-          <span className="text-4xl">📋</span>
+          <img src={`${import.meta.env.BASE_URL}icons/nav_history.png`} alt="History" className="w-16 h-16 mx-auto mb-4 object-contain mix-blend-screen" />
           <p className="mt-3 text-sm text-vapor-muted">No workouts yet</p>
           <p className="text-xs text-vapor-muted mt-1">Complete a workout to see it here</p>
         </div>
