@@ -36,8 +36,10 @@ const MSG_SET = 225;
 const SPORT_TRAINING = 10;
 const SUB_SPORT_STRENGTH_TRAINING = 20;
 
-// 255 = development manufacturer; we're not a registered FIT partner.
-const MANUFACTURER_DEVELOPMENT = 255;
+// Spoof Garmin manufacturer (1) and Fenix 6 product (3289) to bypass
+// Android Garmin Connect Mobile's "Course" import bug.
+const MANUFACTURER_GARMIN = 1;
+const PRODUCT_FENIX_6 = 3289;
 
 const SET_TYPE_ACTIVE = 1;
 
@@ -46,7 +48,8 @@ const UNIT_KG = 1;
 const UNIT_LB = 2;
 
 const INVALID_U16 = 0xffff;
-const EXERCISE_CATEGORY_UNKNOWN = 65534;
+// INVALID_U16 (0xFFFF) is the FIT-spec sentinel for "no data."
+// Garmin Connect rejects non-standard values like 65534 in enum fields.
 
 // FIT uses a custom 16-bit CRC with a 4-bit lookup table (per the SDK).
 const CRC_TABLE = [
@@ -142,7 +145,7 @@ function exerciseCategory(exerciseKey: string, name: string): number {
   if (/\b(leg raise|knee raise|hanging leg)\b/.test(s)) return 16;
   if (/\b(hyperextension|back ext)\b/.test(s)) return 13;
   if (/\bflye?\b/.test(s)) return 9;
-  return EXERCISE_CATEGORY_UNKNOWN;
+  return INVALID_U16;
 }
 
 function lbToKg(lb: number): number {
@@ -165,6 +168,9 @@ export function encodeWorkoutAsFit(
   const displayUnit = opts.weightUnit === 'lb' ? UNIT_LB : UNIT_KG;
 
   // ── file_id (local 0) — required first record ─────────────────────────
+  // When manufacturer=255 (development), Garmin Connect requires
+  // developer_id and application_id to identify the source. Since we are
+  // spoofing Garmin (1), we must remove these fields or it may fail validation.
   writeDefinition(body, 0, MSG_FILE_ID, [
     [3, 4, BT_UINT32Z], // serial_number
     [4, 4, BT_UINT32],  // time_created
@@ -173,10 +179,15 @@ export function encodeWorkoutAsFit(
     [0, 1, BT_ENUM],    // type (4 = activity)
   ]);
   writeDataHeader(body, 0);
-  body.u32(0xdeadbeef >>> 0);
+  // Deterministic serial from session id (simple djb2 hash).
+  let serial = 5381;
+  for (let i = 0; i < session.id.length; i++) {
+    serial = ((serial << 5) + serial + session.id.charCodeAt(i)) >>> 0;
+  }
+  body.u32(serial);
   body.u32(startTs);
-  body.u16(MANUFACTURER_DEVELOPMENT);
-  body.u16(0);
+  body.u16(MANUFACTURER_GARMIN);
+  body.u16(PRODUCT_FENIX_6); // Spoofed to bypass Course bug
   body.u8(4);
 
   // ── set messages (local 1) ────────────────────────────────────────────
@@ -224,6 +235,7 @@ export function encodeWorkoutAsFit(
 
   // ── lap (local 2) — one lap covering the whole session ────────────────
   writeDefinition(body, 2, MSG_LAP, [
+    [254, 2, BT_UINT16], // message_index
     [253, 4, BT_UINT32], // timestamp
     [2, 4, BT_UINT32],   // start_time
     [7, 4, BT_UINT32],   // total_elapsed_time (ms)
@@ -234,6 +246,7 @@ export function encodeWorkoutAsFit(
     [1, 1, BT_ENUM],     // event_type (1 = stop)
   ]);
   writeDataHeader(body, 2);
+  body.u16(0);
   body.u32(endTs);
   body.u32(startTs);
   body.u32(elapsedMs);
@@ -245,6 +258,7 @@ export function encodeWorkoutAsFit(
 
   // ── session (local 3) ─────────────────────────────────────────────────
   writeDefinition(body, 3, MSG_SESSION, [
+    [254, 2, BT_UINT16], // message_index
     [253, 4, BT_UINT32], // timestamp
     [2, 4, BT_UINT32],   // start_time
     [7, 4, BT_UINT32],   // total_elapsed_time
@@ -254,8 +268,10 @@ export function encodeWorkoutAsFit(
     [0, 1, BT_ENUM],     // event (8 = session)
     [1, 1, BT_ENUM],     // event_type (1 = stop)
     [26, 2, BT_UINT16],  // num_laps
+    [30, 2, BT_UINT16],  // num_sets
   ]);
   writeDataHeader(body, 3);
+  body.u16(0);
   body.u32(endTs);
   body.u32(startTs);
   body.u32(elapsedMs);
@@ -265,6 +281,7 @@ export function encodeWorkoutAsFit(
   body.u8(8);
   body.u8(1);
   body.u16(1);
+  body.u16(setIndex);
 
   // ── activity (local 4) ────────────────────────────────────────────────
   writeDefinition(body, 4, MSG_ACTIVITY, [

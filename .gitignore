@@ -6,3 +6,4 @@ dist
 obsidian/
 .claude/
 VOICE_PARSER_CHANGES.txt
+.aider*
