@@ -135,22 +135,17 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
           </div>
         </div>
         {showGarminHelp && (
-          <div className="mt-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-3 text-xs text-cyan-300">
+          <div className="mt-3 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-3 text-xs text-orange-300">
             <p className="font-bold mb-1">FIT file downloaded!</p>
-            <p className="mb-2 text-cyan-400/80">Garmin Connect doesn&apos;t accept shared files on Android. To import:</p>
-            <ol className="list-decimal list-inside space-y-1 text-cyan-400/80 mb-3">
-              <li>Open your <span className="text-cyan-300 font-semibold">Downloads</span> folder</li>
-              <li>Tap the <span className="text-cyan-300 font-semibold">.fit</span> file</li>
-              <li>Choose <span className="text-cyan-300 font-semibold">Open with → Garmin Connect</span></li>
-            </ol>
-            <div className="flex gap-2">
+            <p className="mb-2 text-orange-400/80">The Garmin Connect Android app has a bug and cannot import local Activity files directly. You <span className="font-bold">must</span> upload it via the web dashboard:</p>
+            <div className="flex gap-2 mt-3">
               <a
                 href="https://connect.garmin.com/modern/import-data"
                 target="_blank"
                 rel="noreferrer"
-                className="rounded bg-cyan-600 px-3 py-1.5 font-bold text-white"
+                className="rounded bg-orange-600 px-3 py-1.5 font-bold text-white"
               >
-                Or upload at Garmin Connect ↗
+                Upload at Garmin Web ↗
               </a>
               <button
                 onClick={() => setShowGarminHelp(false)}
