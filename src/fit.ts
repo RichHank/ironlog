@@ -131,7 +131,7 @@ function exerciseCategory(exerciseKey: string, name: string): number {
   if (/\bbench( press)?\b/.test(s)) return 0;
   if (/\bcurl\b/.test(s)) return 7;
   if (/\brow\b/.test(s)) return 23;
-  if (/\b(ohp|overhead press|shoulder press|military press)\b/.test(s)) return 24;
+  if (/\b(ohp|overhead press|shoulder press)\b/.test(s)) return 24;
   if (/\b(pull[- ]?up|chin[- ]?up|pulldown|lat ?pull)\b/.test(s)) return 21;
   if (/\bpush[- ]?up\b/.test(s)) return 22;
   if (/\blunge\b/.test(s)) return 17;

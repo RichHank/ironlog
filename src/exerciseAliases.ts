@@ -11,7 +11,7 @@ const COMMON_ALIASES: Record<string, string[]> = {
   'Front Squat': ['front squat', 'front squats'],
   'Deadlift': ['deadlift', 'deadlifts', 'dead', 'deads', 'dl', 'conventional deadlift'],
   'Romanian Deadlift': ['rdl', 'rdls', 'romanian deadlift'],
-  'Overhead Press': ['ohp', 'press', 'military press', 'overhead press', 'standing press', 'shoulder press'],
+  'Overhead Press': ['ohp', 'press', 'overhead press', 'standing press', 'shoulder press'],
   'Dumbbell Shoulder Press': ['db shoulder press', 'dumbbell shoulder press', 'db ohp'],
   'Barbell Row': ['row', 'rows', 'bb row', 'barbell row', 'bent over row', 'bent-over row'],
   'Dumbbell Row': ['db row', 'dumbbell row', 'one arm row'],
