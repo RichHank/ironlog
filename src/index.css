@@ -22,60 +22,55 @@
 @layer base {
   *, *::before, *::after {
     -webkit-tap-highlight-color: transparent;
+    font-family: 'VT323', monospace !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   html, body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     user-select: none;
     -webkit-user-select: none;
-    background: #0a0a0f;
+    background: #020205; /* Deepest black/blue */
+    color: #00f5ff; /* Cyan text by default */
   }
   input, textarea {
     user-select: text;
     -webkit-user-select: text;
+    text-transform: uppercase;
   }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   input[type="number"] { -moz-appearance: textfield; }
 
-  /* Vaporwave retro grid background */
+  /* Hardcore Cyber Grid */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background: linear-gradient(rgba(255,42,163,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
+    background: 
+      linear-gradient(rgba(255,42,163,0.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
     pointer-events: none;
     z-index: 0;
   }
 
-  /* CRT scanlines overlay */
+  /* Scanlines - aggressive */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     background: repeating-linear-gradient(
       0deg, transparent, transparent 2px,
-      rgba(0, 0, 0, 0.04) 2px, rgba(0, 0, 0, 0.04) 4px
+      rgba(0, 0, 0, 0.15) 2px, rgba(0, 0, 0, 0.15) 4px
     );
     pointer-events: none;
     z-index: 9999;
   }
 
-  /* Retro grid */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(rgba(255,42,163,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Boot-up ASCII lifter mascot */
+  /* Mascot overrides */
   @keyframes mascot-run {
     0%   { transform: translateX(-140px); opacity: 0; }
     8%   { opacity: 1; }
@@ -90,47 +85,76 @@
     pointer-events: none;
     margin: 0;
     padding: 0;
-    font-family: 'VT323', monospace;
     font-size: 22px;
     line-height: 1.05;
     color: #ff2aa3;
-    text-shadow: 0 0 6px rgba(255,42,163,0.55), 0 0 14px rgba(255,42,163,0.25);
+    text-shadow: 0 0 10px #ff2aa3, 0 0 20px #ff2aa3;
     white-space: pre;
     animation: mascot-run 4.2s linear forwards;
   }
 }
 
 @layer components {
+  /* Dashboard Panels */
   .card {
-    @apply rounded-xl border border-[#ff2aa3]/20 bg-[#12121A]/80 backdrop-blur-xl;
-    box-shadow: 0 0 20px rgba(255,42,163,0.04), 0 0 40px rgba(0,245,255,0.02);
+    @apply rounded-md border border-[#ff2aa3] bg-[#0a0a0f]/95 p-4;
+    box-shadow: inset 0 0 10px rgba(255,42,163,0.1), 0 0 10px rgba(255,42,163,0.2);
+    position: relative;
+    z-index: 10;
   }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 1px solid rgba(0,245,255,0.3);
+    border-radius: inherit;
+    pointer-events: none;
+    margin: -3px;
+  }
+
   .card-active {
-    border-color: rgba(255,42,163,0.5);
-    box-shadow: 0 0 25px rgba(255,42,163,0.12), 0 0 50px rgba(0,245,255,0.06);
+    border-color: #00f5ff;
+    box-shadow: inset 0 0 15px rgba(0,245,255,0.2), 0 0 20px rgba(0,245,255,0.4);
   }
+  .card-active::before { border-color: rgba(255,42,163,0.5); }
+
+  /* Buttons */
   .btn-primary {
-    @apply rounded-lg bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-4 py-2.5 font-semibold text-white
-           shadow-[0_0_15px_rgba(255,42,163,0.3)] active:scale-95 transition-transform disabled:opacity-40;
+    @apply rounded-sm border border-[#00f5ff] bg-transparent px-4 py-2.5 font-bold text-[#00f5ff]
+           shadow-[0_0_10px_rgba(0,245,255,0.2)] active:scale-95 transition-all disabled:opacity-40
+           hover:bg-[#00f5ff]/10 hover:shadow-[0_0_20px_rgba(0,245,255,0.5)];
+    text-shadow: 0 0 5px #00f5ff;
   }
+  .btn-primary::before { content: '[ '; color: #ff2aa3; }
+  .btn-primary::after { content: ' ]'; color: #ff2aa3; }
+
   .btn-secondary {
-    @apply rounded-lg bg-[#12121A]/80 px-4 py-2.5 font-semibold text-zinc-300
-           border border-zinc-700/50 active:scale-95 transition-transform
-           hover:border-[#00f5ff]/30 hover:text-[#00f5ff];
+    @apply rounded-sm border border-[#ff2aa3] bg-transparent px-4 py-2.5 font-bold text-[#ff2aa3]
+           shadow-[0_0_10px_rgba(255,42,163,0.2)] active:scale-95 transition-all
+           hover:bg-[#ff2aa3]/10 hover:shadow-[0_0_20px_rgba(255,42,163,0.5)];
+    text-shadow: 0 0 5px #ff2aa3;
   }
+  .btn-secondary::before { content: '> '; color: #00f5ff; }
+
   .btn-danger {
-    @apply rounded-lg bg-[#fe4450]/15 px-4 py-2.5 font-semibold text-[#fe4450]
-           active:scale-95 transition-transform border border-[#fe4450]/20
-           hover:bg-[#fe4450]/25;
+    @apply rounded-sm border border-[#fe4450] bg-transparent px-4 py-2.5 font-bold text-[#fe4450]
+           active:scale-95 transition-all shadow-[0_0_10px_rgba(254,68,80,0.2)]
+           hover:bg-[#fe4450]/10 hover:shadow-[0_0_20px_rgba(254,68,80,0.5)];
   }
+  .btn-danger::before { content: '!! '; }
+
+  /* Inputs */
   .input-field {
-    @apply rounded-lg border border-zinc-700/50 bg-[#12121A] px-3 py-2.5 text-sm text-[#f0e6ff]
-           placeholder:text-zinc-500 focus:border-[#00f5ff]/50 focus:outline-none
-           focus:shadow-[0_0_10px_rgba(0,245,255,0.1)];
+    @apply rounded-sm border border-[#ff2aa3]/50 bg-[#05050A] px-3 py-2.5 text-sm text-[#00f5ff]
+           placeholder:text-[#887baa] focus:border-[#00f5ff] focus:outline-none
+           focus:shadow-[0_0_15px_rgba(0,245,255,0.3)] focus:bg-[#0a0a0f];
   }
+
   .chip {
-    @apply rounded-full px-3 py-1.5 text-xs font-medium;
+    @apply rounded-sm border border-[#00f5ff]/50 bg-[#00f5ff]/10 px-2 py-1 text-[10px] font-bold text-[#00f5ff];
+    text-shadow: 0 0 5px rgba(0,245,255,0.5);
   }
+
   .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
   .safe-area-top { padding-top: calc(env(safe-area-inset-top) + 0.5rem); }
 }

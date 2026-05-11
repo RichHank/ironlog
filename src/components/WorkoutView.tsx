@@ -179,7 +179,7 @@ export default function WorkoutView({
             >
               <div className="min-w-0">
                 <p className="text-xs text-vapor-muted uppercase tracking-wider">Exercise {idx + 1}</p>
-                <p className="truncate text-base font-bold text-vapor-pink">{ex.name}</p>
+                <p className="truncate text-base font-bold text-[#00f5ff] uppercase tracking-widest text-shadow-[0_0_8px_#00f5ff]">{ex.name}.NODE</p>
               </div>
               <div className="ml-2 flex items-center gap-2 flex-shrink-0">
                 <span className="chip bg-vapor-navy text-vapor-muted">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
