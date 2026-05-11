@@ -53,12 +53,12 @@ export default function CalendarView({ sessions, onSelect }: Props) {
   const maxSessions = Math.max(1, ...calendarDays.map(d => d.sessions.length));
 
   const getIntensity = (count: number): string => {
-    if (count === 0) return 'bg-vapor-navy/30';
+    if (count === 0) return 'border-[#00f5ff]/20 bg-[#05050A]/60';
     const pct = count / maxSessions;
-    if (pct <= 0.25) return 'bg-blue-900/40';
-    if (pct <= 0.5) return 'bg-blue-700/50';
-    if (pct <= 0.75) return 'bg-blue-500/60';
-    return 'bg-blue-400';
+    if (pct <= 0.25) return 'bg-[#ff2aa3]/40 border-[#ff2aa3]/60 shadow-[0_0_5px_rgba(255,42,163,0.3)]';
+    if (pct <= 0.5) return 'bg-[#ff2aa3]/60 border-[#ff2aa3]/80 shadow-[0_0_8px_rgba(255,42,163,0.5)]';
+    if (pct <= 0.75) return 'bg-[#ff2aa3]/80 border-[#ff2aa3] shadow-[0_0_12px_rgba(255,42,163,0.6)]';
+    return 'bg-[#ff2aa3] border-[#ff2aa3] shadow-[0_0_20px_rgba(255,42,163,0.9)]';
   };
 
   return (
@@ -101,15 +101,15 @@ export default function CalendarView({ sessions, onSelect }: Props) {
               <button
                 onClick={() => { if (daySessions.length > 0) onSelect(daySessions[0].id); }}
                 disabled={!isWorkout}
-                className={`aspect-square w-full rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${
-                  isWorkout ? `${getIntensity(count)} active:scale-95` : 'bg-zinc-800/20'
-                } ${isToday ? 'ring-1 ring-vapor-pink' : ''}`}
+                className={`aspect-square w-full rounded-sm border flex flex-col items-center justify-center text-xs transition-colors backdrop-blur-sm ${
+                  isWorkout ? `${getIntensity(count)} active:scale-95` : 'border-[#00f5ff]/20 bg-[#05050A]/80 hover:bg-[#00f5ff]/10'
+                } ${isToday && !isWorkout ? 'border-[#00f5ff] shadow-[0_0_15px_rgba(0,245,255,0.6)]' : ''} ${isToday && isWorkout ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0f]' : ''}`}
               >
-                <span className={`font-mono font-bold ${isWorkout ? 'text-white' : 'text-vapor-muted/80'}`}>
+                <span className={`font-mono text-[14px] ${isWorkout ? 'text-white font-bold text-shadow-[0_0_5px_white]' : 'text-[#00f5ff]/60'}`}>
                   {date.getDate()}
                 </span>
                 {isWorkout && count > 0 && (
-                  <span className="text-[9px] text-vapor-cyan mt-0.5">
+                  <span className="text-[9px] text-[#00f5ff] font-bold mt-0.5 mix-blend-screen drop-shadow-[0_0_2px_#00f5ff]">
                     {count > 1 ? `${count}w` : totalVolume > 0 ? `${(totalVolume / 1000).toFixed(0)}k` : '✓'}
                   </span>
                 )}
