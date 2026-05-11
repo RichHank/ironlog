@@ -41,98 +41,95 @@ export default function RestTimer({ timer, activeExercise }: Props) {
   const isUrgent = timer.displaySeconds <= 10 && timer.isRunning;
 
   return (
-    <div className="card p-4 border-[#ff2aa3]/20">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] text-[#887baa] uppercase tracking-[0.2em] font-display">Rest Timer</p>
-        {activeExercise && (
-          <p className="text-xs text-vapor-muted truncate ml-2">{activeExercise.name}</p>
-        )}
-      </div>
+    <div className="relative mx-auto mt-4 max-w-[340px]">
+      {/* 80s Alarm Clock Casing */}
+      <div className="relative rounded-t-xl rounded-b-md bg-[#1a1a24] border-b-[6px] border-[#0a0a0f] shadow-[0_15px_30px_rgba(0,0,0,0.8)] pb-4 overflow-hidden">
+        {/* Top bevel highlight */}
+        <div className="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-[#2a2a35] to-transparent opacity-50" />
+        
+        {/* Casing accents */}
+        <div className="absolute top-0 right-4 w-12 h-2 bg-[#ff2aa3] rounded-b-sm shadow-[0_0_10px_rgba(255,42,163,0.5)]" />
 
-      <div className="flex items-center gap-4">
-        {/* Analog Neon Clock */}
-        <div className={`relative w-[70px] h-[70px] flex-shrink-0 flex items-center justify-center rounded-full border-[3px] shadow-inner bg-[#05050A] ${
-          isUrgent ? 'border-[#fe4450]/60 shadow-[0_0_15px_rgba(254,68,80,0.4)]' : 'border-[#00f5ff]/40 shadow-[0_0_15px_rgba(0,245,255,0.2)]'
-        }`}>
-          {/* Tick marks */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,42,163,0.3)" strokeWidth="4" strokeDasharray="2 11.8" />
-          </svg>
-          {/* Sweeping Hand */}
-          <div 
-            className={`absolute w-1.5 h-[40%] rounded-full origin-bottom z-10 ${
-              isUrgent ? 'bg-[#fe4450] shadow-[0_0_10px_rgba(254,68,80,0.8)]' : 'bg-[#ff2aa3] shadow-[0_0_10px_rgba(255,42,163,0.8)]'
-            }`}
-            style={{ 
-               bottom: '50%', 
-               left: 'calc(50% - 3px)', 
-               transform: `rotate(${timer.duration > 0 ? 360 - ((timer.displaySeconds / timer.duration) * 360) : 0}deg)`,
-               transition: timer.isRunning ? 'transform 1s linear' : 'none'
-            }}
-          />
-          {/* Center Pin */}
-          <div className="absolute w-2.5 h-2.5 rounded-full bg-[#00f5ff] shadow-[0_0_8px_rgba(0,245,255,0.9)] z-20" />
+        <div className="px-4 pt-6 pb-2">
+          {/* LED Display Screen */}
+          <div className="relative bg-[#05050A] rounded-lg border-4 border-[#0a0a0f] p-3 shadow-[inset_0_0_25px_rgba(0,0,0,1)]">
+            
+            {/* Screen Header Indicators */}
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-bold text-[#ff2aa3] tracking-[0.2em]">REST.PROTOCOL</span>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full shadow-inner ${timer.isRunning ? 'bg-[#ff2aa3] shadow-[0_0_8px_#ff2aa3] animate-pulse' : 'bg-[#330011]'}`} />
+                <span className="text-[8px] text-[#ff2aa3]/60 tracking-widest uppercase">ACTIVE</span>
+              </div>
+            </div>
+
+            {/* Giant LED Time */}
+            <div className="flex justify-center items-center py-2 relative">
+              {/* Background inactive segments illusion */}
+              <span className="absolute font-mono text-[4.5rem] leading-none font-black tabular-nums tracking-widest text-[#330011] opacity-40 select-none z-0">
+                88:88
+              </span>
+              <span className={`relative z-10 font-mono text-[4.5rem] leading-none font-black tabular-nums tracking-widest ${
+                isUrgent 
+                  ? 'text-[#fe4450] [text-shadow:0_0_15px_rgba(254,68,80,0.8),0_0_30px_rgba(254,68,80,0.4)]'
+                  : 'text-[#ff2aa3] [text-shadow:0_0_15px_rgba(255,42,163,0.8),0_0_30px_rgba(255,42,163,0.4)]'
+              } ${glitch ? 'animate-ping' : ''}`}>
+                {timer.display}
+              </span>
+            </div>
+
+            {/* Screen Footer Indicators */}
+            <div className="flex justify-between items-end mt-2">
+              <span className="text-[8px] text-[#00f5ff] tracking-widest uppercase truncate max-w-[60%]">
+                {activeExercise ? activeExercise.name : 'AWAITING INPUT'}
+              </span>
+              <span className="text-[8px] text-[#ff2aa3]/80 tracking-widest uppercase">PWR OK</span>
+            </div>
+          </div>
         </div>
 
-        {/* Digital display */}
-        <div className={`min-w-[90px] rounded-sm border px-3 py-2 text-center transition-all duration-200 ${
-          isUrgent
-            ? 'border-[#fe4450]/60 bg-[#fe4450]/10 shadow-[0_0_20px_rgba(254,68,80,0.3)]'
-            : 'border-[#00f5ff]/30 bg-[#00f5ff]/5 shadow-[0_0_12px_rgba(0,245,255,0.1)]'
-        } ${glitch ? 'animate-pulse' : ''}`}>
-          <span className={`text-2xl font-mono font-bold tabular-nums tracking-widest ${
-            isUrgent
-              ? 'text-[#fe4450] [text-shadow:0_0_10px_rgba(254,68,80,0.8),0_0_20px_rgba(254,68,80,0.4)]'
-              : 'text-[#00f5ff] [text-shadow:0_0_10px_rgba(0,245,255,0.6),0_0_20px_rgba(0,245,255,0.3)]'
-          }`}>
-            {timer.display}
-          </span>
-        </div>
+        {/* Chunky Hardware Buttons */}
+        <div className="px-4 mt-2">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {!timer.isRunning && !timer.isPaused && (
+              <button onClick={() => timer.start()} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                START SEQUENCE
+              </button>
+            )}
+            {timer.isRunning && !timer.isPaused && (
+              <button onClick={timer.pause} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fede5d] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                PAUSE
+              </button>
+            )}
+            {timer.isPaused && (
+              <>
+                <button onClick={timer.resume} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                  RESUME
+                </button>
+                <button onClick={timer.reset} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fe4450] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                  RESET
+                </button>
+              </>
+            )}
+          </div>
 
-        {/* Controls */}
-        <div className="flex gap-1.5">
-          {!timer.isRunning && !timer.isPaused && (
-            <button onClick={() => timer.start()}
-              className="min-h-touch rounded-lg bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-4 py-2 text-sm font-bold text-white shadow-[0_0_15px_rgba(255,42,163,0.3)] active:scale-95 transition-transform">
-              Start
-            </button>
-          )}
-          {timer.isRunning && !timer.isPaused && (
-            <button onClick={timer.pause}
-              className="min-h-touch rounded-lg border border-[#fede5d]/40 bg-[#fede5d]/10 px-4 py-2 text-sm font-bold text-[#fede5d] shadow-[0_0_10px_rgba(254,222,93,0.2)] active:scale-95 transition-transform">
-              Pause
-            </button>
-          )}
-          {timer.isPaused && (
-            <>
-              <button onClick={timer.resume}
-                className="min-h-touch rounded-lg bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-4 py-2 text-sm font-bold text-white shadow-[0_0_15px_rgba(255,42,163,0.3)] active:scale-95 transition-transform">
-                Resume
-              </button>
-              <button onClick={timer.reset}
-                className="min-h-touch rounded-lg border border-vapor-magenta/50 bg-vapor-navy/50 px-4 py-2 text-sm font-bold text-vapor-muted active:scale-95 transition-transform hover:border-zinc-600">
-                Reset
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Presets */}
-        <div className="ml-auto flex gap-1 overflow-x-auto scrollbar-hide">
-          {PRESETS.map(d => {
-            const label = d >= 60 ? `${d / 60}m` : `${d}s`;
-            const isActive = timer.duration === d && !timer.isRunning;
-            return (
-              <button key={d} onClick={() => { timer.setDuration(d); timer.start(d); }}
-                className={`min-h-touch rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
-                  isActive
-                    ? 'border border-[#ff2aa3]/40 bg-[#ff2aa3]/10 text-[#ff2aa3] shadow-[0_0_8px_rgba(255,42,163,0.2)]'
-                    : 'border border-zinc-700/50 text-vapor-muted hover:border-[#00f5ff]/30 hover:text-[#00f5ff]'
-                }`}>
-                {label}
-              </button>
-            );
-          })}
+          {/* Preset Buttons */}
+          <div className="flex justify-between gap-1 border-t border-[#0a0a0f] pt-3">
+            {PRESETS.map(d => {
+              const label = d >= 60 ? `${d / 60}m` : `${d}s`;
+              const isActive = timer.duration === d && !timer.isRunning;
+              return (
+                <button key={d} onClick={() => { timer.setDuration(d); timer.start(d); }}
+                  className={`flex-1 rounded-sm border-b-[3px] border-[#0a0a0f] py-2 text-[10px] font-bold transition-all active:translate-y-[2px] active:border-b-[1px] ${
+                    isActive
+                      ? 'bg-[#332233] text-[#ff2aa3] shadow-[0_0_10px_rgba(255,42,163,0.3)_inset]'
+                      : 'bg-[#1a1a24] text-[#887baa] hover:bg-[#2a2a35] hover:text-[#00f5ff]'
+                  }`}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
