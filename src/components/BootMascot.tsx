@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 // from hip-level (rest) → mid → shoulder-level (top of curl) → mid → repeat.
 // Each frame is 5 cols × 5 lines so monospace alignment stays clean.
 const FRAMES = [
-  '  o  \n /|\\ \n  |  \n[] []\n / \\ ', // arms down, weights at hip
-  '  o  \n /|\\ \n[]|[]\n  |  \n / \\ ', // mid-curl
-  '  o  \n[]|[]\n  |  \n  |  \n / \\ ', // weights at shoulder
-  '  o  \n /|\\ \n[]|[]\n  |  \n / \\ ', // mid-descent
+  ' [|]_ ♪  \n (⌐■_■)  \n  /|\\\\   \n  / \\\\   ',
+  ' [|]_  ♫ \n (⌐■_■)  \n   |\\\\   \n   |>    ',
+  ' [|]_ ♪  \n (⌐■_■)  \n //|     \n // \\\\   ',
+  ' [|]_  ♫ \n (⌐■_■)  \n //|     \n  <|     ',
 ];
 
 const FRAME_MS = 140;
