@@ -57,7 +57,7 @@ export default function VoiceButton({ onResult, className }: Props) {
 
   const baseClasses = 'relative min-h-touch min-w-touch flex items-center justify-center rounded-full transition-all duration-300';
   const stateClasses = !isSupported
-    ? 'opacity-30 cursor-not-allowed bg-zinc-800 text-zinc-600'
+    ? 'opacity-30 cursor-not-allowed bg-vapor-navy text-vapor-muted/80'
     : phase === 'listening'
       ? 'bg-[#ff2aa3] text-white shadow-[0_0_20px_rgba(255,42,163,0.6)] scale-110 animate-pulse'
       : phase === 'processing'
@@ -66,7 +66,7 @@ export default function VoiceButton({ onResult, className }: Props) {
           ? 'bg-emerald-500 text-white shadow-[0_0_18px_rgba(16,185,129,0.55)]'
           : phase === 'error'
             ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.55)]'
-            : 'bg-zinc-800/80 text-zinc-400 hover:text-[#00f5ff] hover:shadow-[0_0_12px_rgba(0,245,255,0.3)] border border-zinc-700 hover:border-[#00f5ff]/40';
+            : 'bg-zinc-800/80 text-vapor-muted hover:text-[#00f5ff] hover:shadow-[0_0_12px_rgba(0,245,255,0.3)] border border-vapor-magenta/50 hover:border-[#00f5ff]/40';
 
   const label =
     phase === 'idle' ? 'Tap to speak'
@@ -109,12 +109,12 @@ export default function VoiceButton({ onResult, className }: Props) {
           )}
         </button>
         {(transcript && (phase === 'processing' || phase === 'done')) && (
-          <div className="absolute right-0 top-full mt-2 z-30 max-w-[260px] rounded-lg bg-zinc-900/95 border border-zinc-700 px-3 py-1.5 text-[11px] text-zinc-200 shadow-lg whitespace-normal">
+          <div className="absolute right-0 top-full mt-2 z-30 max-w-[260px] rounded-lg bg-zinc-900/95 border border-vapor-magenta/50 px-3 py-1.5 text-[11px] text-vapor-cyan shadow-lg whitespace-normal">
             <span className="text-[#00f5ff]">▸</span> {transcript}
           </div>
         )}
       </div>
-      <span className="text-[10px] text-zinc-500 hidden sm:inline">{label}</span>
+      <span className="text-[10px] text-vapor-muted hidden sm:inline">{label}</span>
     </div>
   );
 }

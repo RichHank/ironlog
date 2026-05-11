@@ -100,10 +100,10 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-zinc-950">
-      <div className="safe-area-top border-b border-zinc-800 bg-zinc-950 px-4 pb-3">
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-vapor-black">
+      <div className="safe-area-top border-b border-vapor-purple bg-vapor-black px-4 pb-3">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <button onClick={onBack} className="min-h-touch text-blue-400 font-semibold text-sm">← Back</button>
+          <button onClick={onBack} className="min-h-touch text-vapor-cyan font-semibold text-sm">← Back</button>
           <div className="flex gap-2">
             <button
               onClick={handleShare}
@@ -149,19 +149,19 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
               </a>
               <button
                 onClick={() => setShowGarminHelp(false)}
-                className="rounded bg-zinc-700 px-3 py-1.5 text-zinc-300"
+                className="rounded bg-zinc-700 px-3 py-1.5 text-vapor-light"
               >
                 Dismiss
               </button>
             </div>
           </div>
         )}
-        <h2 className="text-xl font-black text-zinc-50">{session.name ?? formatDate(session.startedAt)}</h2>
-        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-zinc-500">
+        <h2 className="text-xl font-black text-vapor-pink">{session.name ?? formatDate(session.startedAt)}</h2>
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-vapor-muted">
           <span>{formatDate(session.startedAt)} · {formatTime(session.startedAt)}</span>
           {session.duration && <span>{formatDuration(session.duration)}</span>}
           <span>{totalSets} set{totalSets !== 1 ? 's' : ''}</span>
-          <span className="text-blue-400 font-semibold">{totalVolume.toLocaleString()} {unit}</span>
+          <span className="text-vapor-cyan font-semibold">{totalVolume.toLocaleString()} {unit}</span>
         </div>
       </div>
 
@@ -172,19 +172,19 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
             <div key={ex.id} className="mt-4 card p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider">Exercise {ei + 1}</p>
-                  <p className="text-base font-bold text-zinc-50">{ex.name}</p>
+                  <p className="text-xs text-vapor-muted uppercase tracking-wider">Exercise {ei + 1}</p>
+                  <p className="text-base font-bold text-vapor-pink">{ex.name}</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="chip bg-zinc-800 text-zinc-400">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
-                  {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} {unit}</span>}
+                  <span className="chip bg-vapor-navy text-vapor-muted">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
+                  {exVolume > 0 && <span className="chip bg-vapor-pink/15 text-vapor-cyan">{exVolume.toLocaleString()} {unit}</span>}
                 </div>
               </div>
 
               {ex.sets.length > 0 && (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-zinc-500 uppercase tracking-wider">
+                    <tr className="text-xs text-vapor-muted uppercase tracking-wider">
                       <th className="py-1.5 pr-2 text-left font-medium">Set</th>
                       <th className="py-1.5 px-2 text-right font-medium">Weight</th>
                       <th className="py-1.5 px-2 text-right font-medium">Reps</th>
@@ -198,8 +198,8 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                       const e1rm = set.weight && set.reps ? est1RM(set.weight, set.reps) : 0;
                       const isEditing = editing?.exId === ex.id && editing?.setId === set.id;
                       return isEditing ? (
-                        <tr key={set.id} className="border-t border-zinc-800/40">
-                          <td className="py-1.5 pr-2 text-zinc-400">{si + 1}</td>
+                        <tr key={set.id} className="border-t border-vapor-purple/40">
+                          <td className="py-1.5 pr-2 text-vapor-muted">{si + 1}</td>
                           <td className="py-1.5 px-1">
                             <input type="number" inputMode="decimal" value={draft.weight}
                               onChange={e => setDraft(p => ({ ...p, weight: e.target.value }))}
@@ -218,31 +218,31 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                           <td className="py-1.5 px-1"></td>
                           <td className="py-1.5 px-1">
                             <div className="flex gap-1">
-                              <button onClick={saveEdit} className="rounded bg-blue-500 px-2 py-0.5 text-xs font-bold text-white">Save</button>
-                              <button onClick={() => setEditing(null)} className="rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">Cancel</button>
+                              <button onClick={saveEdit} className="rounded bg-vapor-pink px-2 py-0.5 text-xs font-bold text-white">Save</button>
+                              <button onClick={() => setEditing(null)} className="rounded bg-zinc-700 px-2 py-0.5 text-xs text-vapor-light">Cancel</button>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        <tr key={set.id} className="border-t border-zinc-800/40 group">
-                          <td className="py-1.5 pr-2 text-zinc-400">
+                        <tr key={set.id} className="border-t border-vapor-purple/40 group">
+                          <td className="py-1.5 pr-2 text-vapor-muted">
                             {si + 1}
                             {set.type !== 'normal' && (
                               <span className={`ml-1.5 chip text-[10px] ${
-                                set.type === 'warmup' ? 'bg-amber-500/10 text-amber-400' :
-                                set.type === 'drop' ? 'bg-purple-500/10 text-purple-400' :
-                                'bg-red-500/10 text-red-400'
+                                set.type === 'warmup' ? 'bg-amber-500/10 text-vapor-yellow' :
+                                set.type === 'drop' ? 'bg-purple-500/10 text-vapor-violet' :
+                                'bg-red-500/10 text-vapor-red'
                               }`}>{set.type}</span>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{formatWeightCell(set.weight, ex.exerciseKey)}</td>
-                          <td className="py-1.5 px-2 text-right font-mono text-zinc-200">{set.reps ?? '-'}</td>
-                          <td className="py-1.5 px-2 text-right font-mono text-zinc-500">{set.rpe ? `@${set.rpe}` : '-'}</td>
-                          <td className="py-1.5 px-2 text-right font-mono text-blue-400">{e1rm > 0 ? e1rm : ''}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-vapor-cyan">{formatWeightCell(set.weight, ex.exerciseKey)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-vapor-cyan">{set.reps ?? '-'}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-vapor-muted">{set.rpe ? `@${set.rpe}` : '-'}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-vapor-cyan">{e1rm > 0 ? e1rm : ''}</td>
                           <td className="py-1.5 px-1 text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEdit(ex.id, set)} className="text-xs text-zinc-600 hover:text-zinc-300">Edit</button>
-                              <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="min-h-touch min-w-[44px] text-xs text-zinc-600 hover:text-red-400">Del</button>
+                              <button onClick={() => startEdit(ex.id, set)} className="text-xs text-vapor-muted/80 hover:text-zinc-300">Edit</button>
+                              <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="min-h-touch min-w-[44px] text-xs text-vapor-muted/80 hover:text-red-400">Del</button>
                             </div>
                           </td>
                         </tr>
@@ -253,7 +253,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
               )}
 
               {ex.notes && (
-                <p className="mt-3 rounded-lg bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400">{ex.notes}</p>
+                <p className="mt-3 rounded-lg bg-vapor-navy/50 px-3 py-2 text-xs text-vapor-muted">{ex.notes}</p>
               )}
             </div>
           );
@@ -261,8 +261,8 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
 
         {session.notes && (
           <div className="mt-4 card p-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Notes</p>
-            <p className="text-sm text-zinc-300">{session.notes}</p>
+            <p className="text-xs text-vapor-muted uppercase tracking-wider mb-1">Notes</p>
+            <p className="text-sm text-vapor-light">{session.notes}</p>
           </div>
         )}
       </div>

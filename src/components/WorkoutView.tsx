@@ -149,7 +149,7 @@ export default function WorkoutView({
       {/* Header stats */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider">Active Workout</p>
+          <p className="text-xs text-vapor-muted uppercase tracking-wider">Active Workout</p>
           <p className="text-lg font-black text-[#f0e6ff]">
             <span className="text-glow-cyan">{totalSets}</span> set{totalSets !== 1 ? 's' : ''} · <span className="text-glow-cyan">{totalVolume.toLocaleString()}</span> {unit}
           </p>
@@ -171,30 +171,30 @@ export default function WorkoutView({
         const prev1rm = lastSet?.weight && lastSet?.reps ? est1RM(lastSet.weight, lastSet.reps) : 0;
 
         return (
-          <div key={ex.id} className={`card overflow-hidden ${isActive ? 'border-blue-500/40 ring-1 ring-blue-500/20' : ''}`}>
+          <div key={ex.id} className={`card overflow-hidden ${isActive ? 'border-vapor-cyan/40 ring-1 ring-vapor-cyan/20' : ''}`}>
             {/* Exercise header */}
             <button
               onClick={() => toggleExercise(ex.id)}
               className="flex w-full items-center justify-between px-4 py-3 text-left active:bg-zinc-800/40"
             >
               <div className="min-w-0">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider">Exercise {idx + 1}</p>
-                <p className="truncate text-base font-bold text-zinc-50">{ex.name}</p>
+                <p className="text-xs text-vapor-muted uppercase tracking-wider">Exercise {idx + 1}</p>
+                <p className="truncate text-base font-bold text-vapor-pink">{ex.name}</p>
               </div>
               <div className="ml-2 flex items-center gap-2 flex-shrink-0">
-                <span className="chip bg-zinc-800 text-zinc-400">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
-                {exVolume > 0 && <span className="chip bg-blue-500/10 text-blue-400">{exVolume.toLocaleString()} {unit}</span>}
+                <span className="chip bg-vapor-navy text-vapor-muted">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
+                {exVolume > 0 && <span className="chip bg-vapor-pink/15 text-vapor-cyan">{exVolume.toLocaleString()} {unit}</span>}
               </div>
             </button>
 
             {isExpanded && (
-              <div className="border-t border-zinc-800 px-4 pb-3">
+              <div className="border-t border-vapor-purple px-4 pb-3">
                 {/* Previous workout comparison */}
                 {(() => {
                   const prev = prevWorkoutLookup.get(ex.exerciseKey);
                   if (!prev) return null;
                   return (
-                    <div className="mt-3 rounded-lg bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400">
+                    <div className="mt-3 rounded-lg bg-vapor-navy/50 px-3 py-2 text-xs text-vapor-muted">
                       <span>
                         Previous: {formatWeightCell(prev.weight, ex.exerciseKey)}{prev.weight !== null ? unit : ''} × {prev.reps ?? '?'} reps
                         {prev.e1rm > 0 && <span className="ml-2">· Est. 1RM: {prev.e1rm} {unit}</span>}
@@ -208,7 +208,7 @@ export default function WorkoutView({
                   <div className="mt-2 mb-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-xs text-zinc-500 uppercase tracking-wider">
+                        <tr className="text-xs text-vapor-muted uppercase tracking-wider">
                           <th className="py-1.5 pr-2 text-left font-medium">Set</th>
                           <th className="py-1.5 px-2 text-right font-medium">Weight</th>
                           <th className="py-1.5 px-2 text-right font-medium">Reps</th>
@@ -222,8 +222,8 @@ export default function WorkoutView({
                           const isEditing = editingSet?.exerciseId === ex.id && editingSet?.setId === set.id;
                           const set1rm = set.weight && set.reps ? est1RM(set.weight, set.reps) : 0;
                           return isEditing ? (
-                            <tr key={set.id} className="border-t border-zinc-800/40">
-                              <td className="py-1.5 pr-2 text-zinc-400">{si + 1}</td>
+                            <tr key={set.id} className="border-t border-vapor-purple/40">
+                              <td className="py-1.5 pr-2 text-vapor-muted">{si + 1}</td>
                               <td className="py-1.5 px-1">
                                 <input type="number" inputMode="decimal" value={editDraft.weight ?? ''}
                                   onChange={e => setEditDraft(p => ({ ...p, weight: e.target.value ? Number(e.target.value) : null }))}
@@ -242,39 +242,39 @@ export default function WorkoutView({
                               <td className="py-1.5 px-1"></td>
                               <td className="py-1.5 pl-1">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={saveEdit} className="rounded bg-blue-500 px-2 py-1 text-xs font-bold text-white">Save</button>
-                                  <button onClick={() => setEditingSet(null)} className="rounded bg-zinc-700 px-2 py-1 text-xs text-zinc-300">Cancel</button>
+                                  <button onClick={saveEdit} className="rounded bg-vapor-pink px-2 py-1 text-xs font-bold text-white">Save</button>
+                                  <button onClick={() => setEditingSet(null)} className="rounded bg-zinc-700 px-2 py-1 text-xs text-vapor-light">Cancel</button>
                                 </div>
                               </td>
                             </tr>
                           ) : (
-                            <tr key={set.id} className="border-t border-zinc-800/40 hover:bg-zinc-800/30">
+                            <tr key={set.id} className="border-t border-vapor-purple/40 hover:bg-zinc-800/30">
                               <td className="py-1.5 pr-2">
-                                <span className={`inline-flex items-center gap-1 text-zinc-400`}>
+                                <span className={`inline-flex items-center gap-1 text-vapor-muted`}>
                                   {si + 1}
                                   {set.type !== 'normal' && (
                                     <span className={`chip text-[10px] ${
-                                      set.type === 'warmup' ? 'bg-amber-500/10 text-amber-400' :
-                                      set.type === 'drop' ? 'bg-purple-500/10 text-purple-400' :
-                                      'bg-red-500/10 text-red-400'
+                                      set.type === 'warmup' ? 'bg-amber-500/10 text-vapor-yellow' :
+                                      set.type === 'drop' ? 'bg-purple-500/10 text-vapor-violet' :
+                                      'bg-red-500/10 text-vapor-red'
                                     }`}>{set.type}</span>
                                   )}
                                 </span>
                               </td>
-                              <td className="py-1.5 px-2 text-right font-mono font-semibold text-zinc-200">
+                              <td className="py-1.5 px-2 text-right font-mono font-semibold text-vapor-cyan">
                                 {formatWeightCell(set.weight, ex.exerciseKey)}
                               </td>
-                              <td className="py-1.5 px-2 text-right font-mono font-semibold text-zinc-200">{set.reps ?? '-'}</td>
-                              <td className="py-1.5 px-2 text-right font-mono text-zinc-500 hidden sm:table-cell">
+                              <td className="py-1.5 px-2 text-right font-mono font-semibold text-vapor-cyan">{set.reps ?? '-'}</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-vapor-muted hidden sm:table-cell">
                                 {set.rpe ? `@${set.rpe}` : '-'}
                               </td>
-                              <td className="py-1.5 px-2 text-right font-mono text-xs text-blue-400">
+                              <td className="py-1.5 px-2 text-right font-mono text-xs text-vapor-cyan">
                                 {set1rm > 0 ? set1rm : ''}
                               </td>
                               <td className="py-1.5 pl-2">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => startEdit(ex.id, set)} className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-zinc-300">Edit</button>
-                                  <button onClick={() => onDeleteSet(ex.id, set.id)} className="min-h-touch min-w-[44px] rounded px-2 py-1.5 text-xs text-zinc-500 hover:text-red-400 flex items-center justify-center">Del</button>
+                                  <button onClick={() => startEdit(ex.id, set)} className="rounded px-1.5 py-0.5 text-xs text-vapor-muted hover:text-zinc-300">Edit</button>
+                                  <button onClick={() => onDeleteSet(ex.id, set.id)} className="min-h-touch min-w-[44px] rounded px-2 py-1.5 text-xs text-vapor-muted hover:text-red-400 flex items-center justify-center">Del</button>
                                 </div>
                               </td>
                             </tr>
@@ -297,7 +297,7 @@ export default function WorkoutView({
                 {/* Delete exercise */}
                 <button
                   onClick={() => onDeleteExercise(ex.id)}
-                  className="mt-3 min-h-touch text-xs text-zinc-600 hover:text-red-400"
+                  className="mt-3 min-h-touch text-xs text-vapor-muted/80 hover:text-red-400"
                 >
                   Remove exercise
                 </button>
@@ -310,14 +310,14 @@ export default function WorkoutView({
       {/* Add Exercise Button */}
       <button
         onClick={() => { setShowSelector(true); handleHaptic(); }}
-        className="card flex min-h-touch items-center justify-center gap-2 py-3 font-semibold text-blue-400 active:bg-zinc-800/40"
+        className="card flex min-h-touch items-center justify-center gap-2 py-3 font-semibold text-vapor-cyan active:bg-zinc-800/40"
       >
         + Add Exercise
       </button>
 
       {/* Workout Notes */}
       <div className="card p-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Workout Notes</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider mb-2">Workout Notes</p>
         <textarea
           value={sessionNotes}
           onChange={e => setSessionNotes(e.target.value)}

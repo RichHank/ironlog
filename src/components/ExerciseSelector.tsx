@@ -80,10 +80,10 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 animate-fade-in">
-      <div className="safe-area-top border-b border-zinc-800 bg-zinc-950 px-4 pb-3">
+    <div className="fixed inset-0 z-50 flex flex-col bg-vapor-black animate-fade-in">
+      <div className="safe-area-top border-b border-vapor-purple bg-vapor-black px-4 pb-3">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h2 className="text-lg font-bold text-zinc-50">Add Exercise</h2>
+          <h2 className="text-lg font-bold text-vapor-pink">Add Exercise</h2>
           <div className="flex gap-2">
             {!showCustomForm && <button onClick={() => setShowCustomForm(true)} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">+ Custom</button>}
             <button onClick={onClose} className="btn-secondary min-h-touch px-3 py-1.5 text-sm">Cancel</button>
@@ -114,7 +114,7 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
         <div className="px-4 pt-2">
           <div className="flex gap-1 mb-2">
             {(['categories', 'muscles'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize ${tab === t ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+              <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize ${tab === t ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
                 {t}
               </button>
             ))}
@@ -122,13 +122,13 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
           <div className="flex gap-1 overflow-x-auto py-1 scrollbar-hide">
             {tab === 'categories' ? (
               ['All', ...EXERCISE_CATEGORIES].map(cat => (
-                <button key={cat} onClick={() => setCategory(cat)} className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${category === cat ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                <button key={cat} onClick={() => setCategory(cat)} className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${category === cat ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
                   {cat}
                 </button>
               ))
             ) : (
               ['All', ...muscleGroups].map(m => (
-                <button key={m} onClick={() => setMuscle(m)} className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${muscle === m ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                <button key={m} onClick={() => setMuscle(m)} className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${muscle === m ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
                   {m}
                 </button>
               ))
@@ -141,16 +141,16 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
         {/* Recent exercises */}
         {recent.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Recent</p>
+            <p className="text-xs text-vapor-muted uppercase tracking-wider mb-2">Recent</p>
             <div className="space-y-1">
               {recent.map(ex => (
                 <button key={ex.key} onClick={() => { onSelect(ex.key, ex.name); onClose(); }}
-                  className="flex w-full items-center justify-between rounded-lg bg-zinc-800/30 px-3 py-2 text-left active:bg-zinc-700/30">
+                  className="flex w-full items-center justify-between rounded-lg bg-vapor-navy/30 px-3 py-2 text-left active:bg-zinc-700/30">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-100">{ex.name}</p>
-                    <p className="text-xs text-zinc-500">{ex.category} · {ex.equipment}</p>
+                    <p className="text-sm font-semibold text-white">{ex.name}</p>
+                    <p className="text-xs text-vapor-muted">{ex.category} · {ex.equipment}</p>
                   </div>
-                  <span className="text-xs text-blue-400">+ Add</span>
+                  <span className="text-xs text-vapor-cyan">+ Add</span>
                 </button>
               ))}
             </div>
@@ -159,8 +159,8 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
 
         {results.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-zinc-400">No exercises found</p>
-            <button onClick={() => { setShowCustomForm(true); setCustomName(query); }} className="mt-2 text-sm text-blue-400 font-semibold">
+            <p className="text-sm text-vapor-muted">No exercises found</p>
+            <button onClick={() => { setShowCustomForm(true); setCustomName(query); }} className="mt-2 text-sm text-vapor-cyan font-semibold">
               + Create "{query}"
             </button>
           </div>
@@ -171,12 +171,12 @@ export default function ExerciseSelector({ open, onClose, onSelect, recentExerci
                 className="flex w-full items-center justify-between py-3 text-left active:bg-zinc-800/30">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-zinc-100">{ex.name}</p>
-                    {ex.key.startsWith('custom-') && <span className="chip bg-amber-500/10 text-amber-400 text-[10px]">Custom</span>}
+                    <p className="text-sm font-semibold text-white">{ex.name}</p>
+                    {ex.key.startsWith('custom-') && <span className="chip bg-amber-500/10 text-vapor-yellow text-[10px]">Custom</span>}
                   </div>
-                  <p className="text-xs text-zinc-500">{ex.category} · {ex.equipment} · {ex.primaryMuscles.join(', ')}</p>
+                  <p className="text-xs text-vapor-muted">{ex.category} · {ex.equipment} · {ex.primaryMuscles.join(', ')}</p>
                 </div>
-                <span className="text-xs text-zinc-600 ml-2 flex-shrink-0">+ Add</span>
+                <span className="text-xs text-vapor-muted/80 ml-2 flex-shrink-0">+ Add</span>
               </button>
             ))}
           </div>

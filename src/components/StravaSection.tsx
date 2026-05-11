@@ -63,15 +63,15 @@ export default function StravaSection({ onShowToast }: Props) {
   };
 
   if (loadingTokens) {
-    return <div className="card p-4 text-sm text-zinc-400">Loading…</div>;
+    return <div className="card p-4 text-sm text-vapor-muted">Loading…</div>;
   }
 
   if (!tokens) {
     return (
       <div className="space-y-4">
         <div className="card p-4">
-          <p className="text-sm font-semibold text-zinc-50 mb-2">Connect Strava</p>
-          <p className="text-xs text-zinc-400 mb-3">
+          <p className="text-sm font-semibold text-vapor-pink mb-2">Connect Strava</p>
+          <p className="text-xs text-vapor-muted mb-3">
             Push completed workouts to Strava and pull recent activities. Read + write access.
           </p>
           <button
@@ -101,42 +101,42 @@ export default function StravaSection({ onShowToast }: Props) {
             <img src={athlete.profile} alt="" className="h-10 w-10 rounded-full" />
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-zinc-50 truncate">{name}</p>
-            <p className="text-xs text-zinc-500">Connected to Strava</p>
+            <p className="text-sm font-semibold text-vapor-pink truncate">{name}</p>
+            <p className="text-xs text-vapor-muted">Connected to Strava</p>
           </div>
           <button
             onClick={handleDisconnect}
-            className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-700"
+            className="rounded-lg bg-vapor-navy px-3 py-1.5 text-xs font-semibold text-vapor-light hover:bg-zinc-700"
           >
             Disconnect
           </button>
         </div>
         {tokens.scope && (
-          <p className="mt-2 text-[10px] text-zinc-600 break-all">scope: {tokens.scope}</p>
+          <p className="mt-2 text-[10px] text-vapor-muted/80 break-all">scope: {tokens.scope}</p>
         )}
       </div>
 
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-zinc-50">Recent Activities</p>
+          <p className="text-sm font-semibold text-vapor-pink">Recent Activities</p>
           <button
             onClick={refreshActivities}
             disabled={loadingActivities}
-            className="text-xs font-semibold text-blue-400 disabled:text-zinc-600"
+            className="text-xs font-semibold text-vapor-cyan disabled:text-zinc-600"
           >
             {loadingActivities ? 'Loading…' : 'Refresh'}
           </button>
         </div>
-        {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
+        {error && <p className="text-xs text-vapor-red mb-2">{error}</p>}
         {!activities || activities.length === 0 ? (
-          <p className="text-xs text-zinc-500">{loadingActivities ? '' : 'No activities yet.'}</p>
+          <p className="text-xs text-vapor-muted">{loadingActivities ? '' : 'No activities yet.'}</p>
         ) : (
           <ul className="divide-y divide-zinc-800">
             {activities.map(a => (
               <li key={a.id} className="py-2 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-100 truncate">{a.name}</p>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-sm text-white truncate">{a.name}</p>
+                  <p className="text-[11px] text-vapor-muted">
                     {formatDate(a.start_date_local)} · {a.sport_type} · {formatDuration(a.elapsed_time)}
                     {a.distance > 0 && ` · ${formatDistance(a.distance)}`}
                   </p>

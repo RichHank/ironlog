@@ -37,7 +37,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
     <div className="mt-3 border-t border-zinc-800/50 pt-3">
       <div className="flex items-end gap-2 flex-wrap">
         <div className="flex-1 min-w-[80px]">
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Weight {lastSet?.weight ? `(last: ${lastSet.weight})` : ''}</label>
+          <label className="text-[10px] text-vapor-muted uppercase tracking-wider">Weight {lastSet?.weight ? `(last: ${lastSet.weight})` : ''}</label>
           <input
             type="number"
             inputMode="decimal"
@@ -48,7 +48,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
           />
         </div>
         <div className="flex-1 min-w-[60px]">
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Reps {lastSet?.reps ? `(last: ${lastSet.reps})` : ''}</label>
+          <label className="text-[10px] text-vapor-muted uppercase tracking-wider">Reps {lastSet?.reps ? `(last: ${lastSet.reps})` : ''}</label>
           <input
             type="number"
             inputMode="numeric"
@@ -59,7 +59,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
           />
         </div>
         <div className="w-14">
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider">RPE</label>
+          <label className="text-[10px] text-vapor-muted uppercase tracking-wider">RPE</label>
           <input
             type="number"
             inputMode="decimal"
@@ -71,7 +71,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
         </div>
         <button
           onClick={handleSubmit}
-          className="min-h-touch rounded-lg bg-blue-500 px-5 py-2.5 font-bold text-white active:scale-95 transition-transform"
+          className="min-h-touch rounded-lg bg-vapor-pink px-5 py-2.5 font-bold text-white active:scale-95 transition-transform"
         >
           Log
         </button>
@@ -84,11 +84,11 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
             onClick={() => setType(t.value)}
             className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors ${
               type === t.value
-                ? t.value === 'normal' ? 'bg-blue-500 text-white'
-                : t.value === 'warmup' ? 'bg-amber-500 text-white'
-                : t.value === 'drop' ? 'bg-purple-500 text-white'
-                : 'bg-red-500 text-white'
-                : 'bg-zinc-800 text-zinc-500'
+                ? t.value === 'normal' ? 'bg-vapor-pink text-white'
+                : t.value === 'warmup' ? 'bg-vapor-yellow text-white'
+                : t.value === 'drop' ? 'bg-vapor-violet text-white'
+                : 'bg-vapor-red text-white'
+                : 'bg-vapor-navy text-vapor-muted'
             }`}
           >
             {t.label}

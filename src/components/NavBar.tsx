@@ -28,7 +28,7 @@ export default function NavBar({ view, onChange, hasActiveSession }: Props) {
             className={`relative flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all ${
               view === tab.view
                 ? 'text-[#ff2aa3] [text-shadow:0_0_8px_rgba(255,42,163,0.6),0_0_16px_rgba(255,42,163,0.3)]'
-                : 'text-zinc-600 hover:text-zinc-400'
+                : 'text-vapor-muted/80 hover:text-zinc-400'
             }`}
           >
             {tab.view === 'workout' && hasActiveSession && (

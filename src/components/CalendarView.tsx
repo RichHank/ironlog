@@ -53,7 +53,7 @@ export default function CalendarView({ sessions, onSelect }: Props) {
   const maxSessions = Math.max(1, ...calendarDays.map(d => d.sessions.length));
 
   const getIntensity = (count: number): string => {
-    if (count === 0) return 'bg-zinc-800/30';
+    if (count === 0) return 'bg-vapor-navy/30';
     const pct = count / maxSessions;
     if (pct <= 0.25) return 'bg-blue-900/40';
     if (pct <= 0.5) return 'bg-blue-700/50';
@@ -64,13 +64,13 @@ export default function CalendarView({ sessions, onSelect }: Props) {
   return (
     <div className="px-3 pt-4 sm:px-4">
       <div className="mb-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">Calendar</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider">Calendar</p>
         <div className="flex items-center justify-between gap-2">
-          <button onClick={prevMonth} className="min-h-touch rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-zinc-300 active:bg-zinc-700">
+          <button onClick={prevMonth} className="min-h-touch rounded-lg bg-vapor-navy px-3 py-1.5 text-sm font-semibold text-vapor-light active:bg-zinc-700">
             ←
           </button>
-          <p className="text-lg font-black text-zinc-50">{monthName}</p>
-          <button onClick={nextMonth} className="min-h-touch rounded-lg bg-zinc-800 px-3 py-1.5 text-sm font-semibold text-zinc-300 active:bg-zinc-700">
+          <p className="text-lg font-black text-vapor-pink">{monthName}</p>
+          <button onClick={nextMonth} className="min-h-touch rounded-lg bg-vapor-navy px-3 py-1.5 text-sm font-semibold text-vapor-light active:bg-zinc-700">
             →
           </button>
         </div>
@@ -78,7 +78,7 @@ export default function CalendarView({ sessions, onSelect }: Props) {
 
       <div className="grid grid-cols-7 gap-1 mb-1">
         {weekDays.map(d => (
-          <p key={d} className="text-center text-[10px] font-medium text-zinc-600 uppercase">{d}</p>
+          <p key={d} className="text-center text-[10px] font-medium text-vapor-muted/80 uppercase">{d}</p>
         ))}
       </div>
 
@@ -103,13 +103,13 @@ export default function CalendarView({ sessions, onSelect }: Props) {
                 disabled={!isWorkout}
                 className={`aspect-square w-full rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${
                   isWorkout ? `${getIntensity(count)} active:scale-95` : 'bg-zinc-800/20'
-                } ${isToday ? 'ring-1 ring-blue-500' : ''}`}
+                } ${isToday ? 'ring-1 ring-vapor-pink' : ''}`}
               >
-                <span className={`font-mono font-bold ${isWorkout ? 'text-white' : 'text-zinc-600'}`}>
+                <span className={`font-mono font-bold ${isWorkout ? 'text-white' : 'text-vapor-muted/80'}`}>
                   {date.getDate()}
                 </span>
                 {isWorkout && count > 0 && (
-                  <span className="text-[9px] text-zinc-200 mt-0.5">
+                  <span className="text-[9px] text-vapor-cyan mt-0.5">
                     {count > 1 ? `${count}w` : totalVolume > 0 ? `${(totalVolume / 1000).toFixed(0)}k` : '✓'}
                   </span>
                 )}
@@ -120,7 +120,7 @@ export default function CalendarView({ sessions, onSelect }: Props) {
       </div>
 
       <div className="mt-6 card p-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Recent Workouts</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider mb-2">Recent Workouts</p>
         <div className="flex flex-col gap-2">
           {sessions.slice(0, 10).map(s => {
             const sets = s.exercises.reduce((sum, e) => sum + e.sets.length, 0);
@@ -131,19 +131,19 @@ export default function CalendarView({ sessions, onSelect }: Props) {
               <button
                 key={s.id}
                 onClick={() => onSelect(s.id)}
-                className="flex items-center justify-between rounded-lg bg-zinc-800/30 px-3 py-2 text-left active:bg-zinc-700/30"
+                className="flex items-center justify-between rounded-lg bg-vapor-navy/30 px-3 py-2 text-left active:bg-zinc-700/30"
               >
                 <div>
-                  <p className="text-sm font-semibold text-zinc-200">
+                  <p className="text-sm font-semibold text-vapor-cyan">
                     {s.name ?? new Date(s.startedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-vapor-muted">
                     {s.exercises.map(e => e.name).join(', ')}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-xs font-bold text-zinc-300">{sets} sets</p>
-                  <p className="text-xs text-blue-400">{vol.toLocaleString()} {unit}</p>
+                  <p className="text-xs font-bold text-vapor-light">{sets} sets</p>
+                  <p className="text-xs text-vapor-cyan">{vol.toLocaleString()} {unit}</p>
                 </div>
               </button>
             );

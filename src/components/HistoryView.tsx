@@ -25,11 +25,11 @@ export default function HistoryView({ sessions, onSelect }: Props) {
   if (sessions.length === 0) {
     return (
       <div className="px-3 pt-4 sm:px-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">History</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider">History</p>
         <div className="py-16 text-center">
           <span className="text-4xl">📋</span>
-          <p className="mt-3 text-sm text-zinc-400">No workouts yet</p>
-          <p className="text-xs text-zinc-500 mt-1">Complete a workout to see it here</p>
+          <p className="mt-3 text-sm text-vapor-muted">No workouts yet</p>
+          <p className="text-xs text-vapor-muted mt-1">Complete a workout to see it here</p>
         </div>
       </div>
     );
@@ -38,14 +38,14 @@ export default function HistoryView({ sessions, onSelect }: Props) {
   return (
     <div className="px-3 pt-4 sm:px-4">
       <div className="mb-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">History</p>
-        <p className="text-lg font-black text-zinc-50">{sessions.length} workout{sessions.length !== 1 ? 's' : ''}</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider">History</p>
+        <p className="text-lg font-black text-vapor-pink">{sessions.length} workout{sessions.length !== 1 ? 's' : ''}</p>
       </div>
 
       <div className="flex flex-col gap-4">
         {Array.from(grouped.entries()).map(([date, group]) => (
           <div key={date}>
-            <p className="mb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">{date}</p>
+            <p className="mb-2 text-xs font-semibold text-vapor-muted uppercase tracking-wider">{date}</p>
             <div className="flex flex-col gap-2">
               {group.map(session => {
                 const { sets, volume, exercises } = workoutSummary(session);
@@ -57,27 +57,27 @@ export default function HistoryView({ sessions, onSelect }: Props) {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-zinc-50 truncate">
+                        <p className="text-sm font-bold text-vapor-pink truncate">
                           {session.name ?? formatDate(session.startedAt)}
                         </p>
-                        <p className="text-xs text-zinc-500 truncate mt-0.5">{exercises}</p>
+                        <p className="text-xs text-vapor-muted truncate mt-0.5">{exercises}</p>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 text-right">
                         <div>
-                          <p className="text-xs text-zinc-600">Sets</p>
-                          <p className="text-sm font-bold text-zinc-300">{sets}</p>
+                          <p className="text-xs text-vapor-muted/80">Sets</p>
+                          <p className="text-sm font-bold text-vapor-light">{sets}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-zinc-600">Vol</p>
-                          <p className="text-sm font-bold text-blue-400">{volume.toLocaleString()}</p>
+                          <p className="text-xs text-vapor-muted/80">Vol</p>
+                          <p className="text-sm font-bold text-vapor-cyan">{volume.toLocaleString()}</p>
                         </div>
                         {session.duration && (
                           <div>
-                            <p className="text-xs text-zinc-600">Time</p>
-                            <p className="text-sm font-bold text-zinc-400">{session.duration}m</p>
+                            <p className="text-xs text-vapor-muted/80">Time</p>
+                            <p className="text-sm font-bold text-vapor-muted">{session.duration}m</p>
                           </div>
                         )}
-                        <span className="text-zinc-600">→</span>
+                        <span className="text-vapor-muted/80">→</span>
                       </div>
                     </div>
                   </button>

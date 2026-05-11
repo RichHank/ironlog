@@ -45,7 +45,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] text-[#887baa] uppercase tracking-[0.2em] font-display">Rest Timer</p>
         {activeExercise && (
-          <p className="text-xs text-zinc-400 truncate ml-2">{activeExercise.name}</p>
+          <p className="text-xs text-vapor-muted truncate ml-2">{activeExercise.name}</p>
         )}
       </div>
 
@@ -96,7 +96,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
                 Resume
               </button>
               <button onClick={timer.reset}
-                className="min-h-touch rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-bold text-zinc-400 active:scale-95 transition-transform hover:border-zinc-600">
+                className="min-h-touch rounded-lg border border-vapor-magenta/50 bg-vapor-navy/50 px-4 py-2 text-sm font-bold text-vapor-muted active:scale-95 transition-transform hover:border-zinc-600">
                 Reset
               </button>
             </>
@@ -113,7 +113,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
                 className={`min-h-touch rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
                   isActive
                     ? 'border border-[#ff2aa3]/40 bg-[#ff2aa3]/10 text-[#ff2aa3] shadow-[0_0_8px_rgba(255,42,163,0.2)]'
-                    : 'border border-zinc-700/50 text-zinc-500 hover:border-[#00f5ff]/30 hover:text-[#00f5ff]'
+                    : 'border border-zinc-700/50 text-vapor-muted hover:border-[#00f5ff]/30 hover:text-[#00f5ff]'
                 }`}>
                 {label}
               </button>

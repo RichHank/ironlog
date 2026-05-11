@@ -48,8 +48,8 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
     <div className="px-3 pt-4 sm:px-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider">Routines</p>
-          <p className="text-lg font-black text-zinc-50">{routines.length} saved</p>
+          <p className="text-xs text-vapor-muted uppercase tracking-wider">Routines</p>
+          <p className="text-lg font-black text-vapor-pink">{routines.length} saved</p>
         </div>
         <button onClick={handleCreate} className="btn-primary text-sm">+ New</button>
       </div>
@@ -57,8 +57,8 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
       {routines.length === 0 ? (
         <div className="py-16 text-center">
           <span className="text-4xl">📁</span>
-          <p className="mt-3 text-sm text-zinc-400">No routines yet</p>
-          <p className="text-xs text-zinc-500 mt-1">Create a template to quickly start workouts</p>
+          <p className="mt-3 text-sm text-vapor-muted">No routines yet</p>
+          <p className="text-xs text-vapor-muted mt-1">Create a template to quickly start workouts</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -66,8 +66,8 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
             <div key={routine.id} className="card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-base font-bold text-zinc-50 truncate">{routine.name}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <h3 className="text-base font-bold text-vapor-pink truncate">{routine.name}</h3>
+                  <p className="text-xs text-vapor-muted mt-0.5">
                     {routine.exercises.length} exercise{routine.exercises.length !== 1 ? 's' : ''}
                     {routine.lastUsedAt ? ` · Last used ${new Date(routine.lastUsedAt).toLocaleDateString()}` : ''}
                   </p>
@@ -76,13 +76,13 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
               {/* Exercise list */}
               <div className="mt-3 space-y-1">
                 {routine.exercises.map((ex, i) => (
-                  <div key={ex.id} className="flex items-center justify-between rounded-lg bg-zinc-800/50 px-3 py-2 text-sm">
-                    <span className="text-zinc-300">{i + 1}. {ex.name}</span>
-                    <span className="text-xs text-zinc-500">{ex.plannedSets.length} set{ex.plannedSets.length !== 1 ? 's' : ''}</span>
+                  <div key={ex.id} className="flex items-center justify-between rounded-lg bg-vapor-navy/50 px-3 py-2 text-sm">
+                    <span className="text-vapor-light">{i + 1}. {ex.name}</span>
+                    <span className="text-xs text-vapor-muted">{ex.plannedSets.length} set{ex.plannedSets.length !== 1 ? 's' : ''}</span>
                   </div>
                 ))}
               </div>
-              {routine.notes && <p className="mt-2 text-xs text-zinc-500">{routine.notes}</p>}
+              {routine.notes && <p className="mt-2 text-xs text-vapor-muted">{routine.notes}</p>}
               <div className="mt-3 flex gap-2">
                 <button onClick={() => handleStart(routine)} className="flex-1 btn-primary text-sm py-2">Start</button>
                 <button onClick={() => handleEdit(routine)} className="btn-secondary text-sm py-2">Edit</button>

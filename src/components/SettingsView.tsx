@@ -52,8 +52,8 @@ export default function SettingsView({ onShowToast }: Props) {
   return (
     <div className="px-3 pt-4 sm:px-4">
       <div className="mb-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">Settings</p>
-        <p className="text-lg font-black text-zinc-50">Preferences & Tools</p>
+        <p className="text-xs text-vapor-muted uppercase tracking-wider">Settings</p>
+        <p className="text-lg font-black text-vapor-pink">Preferences & Tools</p>
       </div>
 
       {/* Tabs */}
@@ -66,7 +66,7 @@ export default function SettingsView({ onShowToast }: Props) {
           { key: 'data', label: 'Data' },
         ] as { key: Tab; label: string }[]).map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${tab === t.key ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+            className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${tab === t.key ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
             {t.label}
           </button>
         ))}
@@ -75,11 +75,11 @@ export default function SettingsView({ onShowToast }: Props) {
       {tab === 'prefs' && (
         <div className="space-y-4">
           <div className="card p-4">
-            <p className="text-sm font-semibold text-zinc-50 mb-3">Weight Unit</p>
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Weight Unit</p>
             <div className="flex gap-2">
               {(['lb', 'kg'] as const).map(u => (
                 <button key={u} onClick={() => updateSetting('weightUnit', u)}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${settings.weightUnit === u ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${settings.weightUnit === u ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
                   {u === 'lb' ? 'Pounds (lb)' : 'Kilograms (kg)'}
                 </button>
               ))}
@@ -87,11 +87,11 @@ export default function SettingsView({ onShowToast }: Props) {
           </div>
 
           <div className="card p-4">
-            <p className="text-sm font-semibold text-zinc-50 mb-3">Default Rest Timer</p>
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Default Rest Timer</p>
             <div className="flex gap-2 flex-wrap">
               {[60, 90, 120, 150, 180].map(d => (
                 <button key={d} onClick={() => updateSetting('restTimerDuration', d)}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${settings.restTimerDuration === d ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${settings.restTimerDuration === d ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}>
                   {d >= 60 ? `${d/60}m` : `${d}s`}
                 </button>
               ))}
@@ -101,12 +101,12 @@ export default function SettingsView({ onShowToast }: Props) {
           <div className="card p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-zinc-50">Vaporwave background loop</p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">Procedurally generated chiptune + pad. Plays after first tap.</p>
+                <p className="text-sm font-semibold text-vapor-pink">Vaporwave background loop</p>
+                <p className="text-[11px] text-vapor-muted mt-0.5">Procedurally generated chiptune + pad. Plays after first tap.</p>
               </div>
               <button
                 onClick={toggleMusic}
-                className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${musicMuted ? 'bg-zinc-800 text-zinc-400' : 'bg-[#ff2aa3] text-white shadow-[0_0_12px_rgba(255,42,163,0.4)]'}`}
+                className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${musicMuted ? 'bg-vapor-navy text-vapor-muted' : 'bg-[#ff2aa3] text-white shadow-[0_0_12px_rgba(255,42,163,0.4)]'}`}
               >
                 {musicMuted ? 'Off' : 'On'}
               </button>
@@ -124,7 +124,7 @@ export default function SettingsView({ onShowToast }: Props) {
       {tab === 'data' && (
         <div className="space-y-4">
           <div className="card p-4">
-            <p className="text-sm font-semibold text-zinc-50 mb-3">Export</p>
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Export</p>
             <div className="flex flex-col gap-2">
               <button onClick={handleExport} className="btn-secondary w-full text-sm py-3 text-left pl-4">
                 Export All Data (JSON)
@@ -136,7 +136,7 @@ export default function SettingsView({ onShowToast }: Props) {
           </div>
 
           <div className="card p-4">
-            <p className="text-sm font-semibold text-zinc-50 mb-3">Import</p>
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Import</p>
             <div className="flex flex-col gap-2">
               <label className="btn-secondary w-full text-sm py-3 text-left pl-4 cursor-pointer">
                 Import Data (JSON)
@@ -164,7 +164,7 @@ export default function SettingsView({ onShowToast }: Props) {
           </div>
 
           <div className="card p-4">
-            <p className="text-sm font-semibold text-zinc-50 mb-3">Danger Zone</p>
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Danger Zone</p>
             <button onClick={handleClear} className="btn-danger w-full text-sm py-3 text-left pl-4">
               Clear All Data
             </button>

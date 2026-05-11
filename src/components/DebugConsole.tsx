@@ -127,7 +127,7 @@ export default function DebugConsole() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-2 py-0.5 text-[10px] rounded font-mono ${tab === t ? 'bg-[#ff2aa3]/20 text-[#ff2aa3]' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-2 py-0.5 text-[10px] rounded font-mono ${tab === t ? 'bg-[#ff2aa3]/20 text-[#ff2aa3]' : 'text-vapor-muted hover:text-zinc-300'}`}
             >
               {t === 'log' ? 'Log' : 'State'}
             </button>
@@ -143,7 +143,7 @@ export default function DebugConsole() {
               <button
                 key={l}
                 onClick={() => setFilter(l)}
-                className={`px-1.5 py-0.5 text-[9px] rounded font-mono ${filter === l ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
+                className={`px-1.5 py-0.5 text-[9px] rounded font-mono ${filter === l ? 'bg-zinc-700 text-white' : 'text-vapor-muted'}`}
               >
                 {l.toUpperCase()}{l !== 'all' ? ` ${counts[l]}` : ''}
               </button>
@@ -152,9 +152,9 @@ export default function DebugConsole() {
         )}
 
         {/* Actions */}
-        <button onClick={() => { clearLogs(); setEntries([]); setSnapshots([]); }} className="text-[9px] text-zinc-500 hover:text-red-400 font-mono px-1">Clr</button>
-        <button onClick={() => { const txt = exportLogs(); navigator.clipboard?.writeText(txt); }} className="text-[9px] text-zinc-500 hover:text-[#00f5ff] font-mono px-1">Copy</button>
-        <button onClick={() => setOpen(false)} className="text-[9px] text-zinc-500 hover:text-white font-mono px-1 ml-1">X</button>
+        <button onClick={() => { clearLogs(); setEntries([]); setSnapshots([]); }} className="text-[9px] text-vapor-muted hover:text-red-400 font-mono px-1">Clr</button>
+        <button onClick={() => { const txt = exportLogs(); navigator.clipboard?.writeText(txt); }} className="text-[9px] text-vapor-muted hover:text-[#00f5ff] font-mono px-1">Copy</button>
+        <button onClick={() => setOpen(false)} className="text-[9px] text-vapor-muted hover:text-white font-mono px-1 ml-1">X</button>
       </div>
 
       {/* Search (log tab only) */}
@@ -178,21 +178,21 @@ export default function DebugConsole() {
       >
         {tab === 'log' && filtered.map(e => (
           <div key={e.id} className="py-0.5 border-b border-zinc-900/50 hover:bg-zinc-900/30 px-1 rounded">
-            <span className="text-zinc-600 mr-2">{formatTime(e.timestamp)}</span>
+            <span className="text-vapor-muted/80 mr-2">{formatTime(e.timestamp)}</span>
             <span style={{ color: LEVEL_COLORS[e.level] }} className="font-bold mr-2">{LEVEL_LABELS[e.level]}</span>
-            <span className="text-zinc-300">
+            <span className="text-vapor-light">
               {e.args.map((a, i) => (
                 <span key={i} className="break-all">{i > 0 ? ' ' : ''}{formatArg(a)}</span>
               ))}
             </span>
             {e.stack && (
-              <pre className="text-[9px] text-zinc-600 mt-0.5 ml-20 overflow-x-auto whitespace-pre-wrap">{e.stack}</pre>
+              <pre className="text-[9px] text-vapor-muted/80 mt-0.5 ml-20 overflow-x-auto whitespace-pre-wrap">{e.stack}</pre>
             )}
           </div>
         ))}
 
         {tab === 'log' && filtered.length === 0 && (
-          <div className="text-center text-zinc-600 mt-8">No log entries</div>
+          <div className="text-center text-vapor-muted/80 mt-8">No log entries</div>
         )}
 
         {tab === 'state' && (
@@ -216,8 +216,8 @@ export default function DebugConsole() {
 
             {/* Live state view */}
             <div className="mb-3">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Current localStorage</p>
-              <pre className="text-[10px] text-zinc-400 bg-[#12121A] rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap border border-zinc-800/50">
+              <p className="text-[10px] text-vapor-muted uppercase tracking-wider mb-1">Current localStorage</p>
+              <pre className="text-[10px] text-vapor-muted bg-[#12121A] rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap border border-zinc-800/50">
                 {['il-current', 'il-history', 'il-settings', 'il-prs'].map(k => {
                   try {
                     const v = localStorage.getItem(k);
@@ -234,19 +234,19 @@ export default function DebugConsole() {
             </div>
 
             {/* Snapshots list */}
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Snapshots ({snapshots.length})</p>
+            <p className="text-[10px] text-vapor-muted uppercase tracking-wider mb-1">Snapshots ({snapshots.length})</p>
             {snapshots.slice().reverse().map(s => (
               <details key={s.id} className="mb-1.5">
-                <summary className="text-[10px] text-zinc-400 cursor-pointer hover:text-zinc-200 font-mono">
+                <summary className="text-[10px] text-vapor-muted cursor-pointer hover:text-zinc-200 font-mono">
                   {formatTime(s.timestamp)} — {s.label}
                 </summary>
-                <pre className="text-[9px] text-zinc-500 bg-[#12121A] rounded p-2 mt-1 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap border border-zinc-800/50">
+                <pre className="text-[9px] text-vapor-muted bg-[#12121A] rounded p-2 mt-1 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap border border-zinc-800/50">
                   {JSON.stringify(s.data, null, 2)}
                 </pre>
               </details>
             ))}
             {snapshots.length === 0 && (
-              <p className="text-zinc-600 text-[10px]">No snapshots yet. Capture one above.</p>
+              <p className="text-vapor-muted/80 text-[10px]">No snapshots yet. Capture one above.</p>
             )}
           </div>
         )}
