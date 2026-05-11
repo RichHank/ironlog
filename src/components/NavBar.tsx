@@ -1,5 +1,6 @@
 import { View } from '../App';
 import { DumbbellIcon, ClipboardIcon, CalendarIcon, ChartIcon, FolderIcon, GearIcon } from './Icons';
+import { playClick } from '../audio';
 
 type Props = {
   view: View;
@@ -24,7 +25,10 @@ export default function NavBar({ view, onChange, hasActiveSession }: Props) {
         {TABS.map(tab => (
           <button
             key={tab.view}
-            onClick={() => onChange(tab.view)}
+            onClick={() => {
+              playClick();
+              onChange(tab.view);
+            }}
             className={`relative flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all ${
               view === tab.view
                 ? 'text-[#ff2aa3] [text-shadow:0_0_8px_rgba(255,42,163,0.6),0_0_16px_rgba(255,42,163,0.3)]'

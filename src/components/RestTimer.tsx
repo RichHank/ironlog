@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExerciseLog } from '../types';
+import { playClick, playAlarm, playPowerUp } from '../audio';
 
 const PRESETS = [45, 60, 90, 120, 150, 180];
 
@@ -31,6 +32,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
     const justExpired = prevSeconds.current > 0 && timer.displaySeconds === 0;
     if (justExpired && !document.hidden) {
       if (window.navigator?.vibrate) window.navigator.vibrate([200, 100, 200, 100, 400]);
+      playAlarm();
       setGlitch(true);
       setTimeout(() => setGlitch(false), 600);
     }
@@ -92,21 +94,21 @@ export default function RestTimer({ timer, activeExercise }: Props) {
         <div className="px-4 mt-2">
           <div className="grid grid-cols-2 gap-3 mb-4">
             {!timer.isRunning && !timer.isPaused && (
-              <button onClick={() => timer.start()} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+              <button onClick={() => { playPowerUp(); timer.start(); }} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
                 START SEQUENCE
               </button>
             )}
             {timer.isRunning && !timer.isPaused && (
-              <button onClick={timer.pause} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fede5d] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+              <button onClick={() => { playClick(); timer.pause(); }} className="col-span-2 rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fede5d] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
                 PAUSE
               </button>
             )}
             {timer.isPaused && (
               <>
-                <button onClick={timer.resume} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                <button onClick={() => { playPowerUp(); timer.resume(); }} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#00f5ff] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
                   RESUME
                 </button>
-                <button onClick={timer.reset} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fe4450] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
+                <button onClick={() => { playClick(); timer.reset(); }} className="rounded-sm bg-[#2a2a35] border-b-[4px] border-[#0a0a0f] py-3 text-sm font-black tracking-wider text-[#fe4450] transition-all active:translate-y-[3px] active:border-b-[1px] shadow-[0_4px_10px_rgba(0,0,0,0.4)]">
                   RESET
                 </button>
               </>
@@ -119,7 +121,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
               const label = d >= 60 ? `${d / 60}m` : `${d}s`;
               const isActive = timer.duration === d && !timer.isRunning;
               return (
-                <button key={d} onClick={() => { timer.setDuration(d); timer.start(d); }}
+                <button key={d} onClick={() => { playPowerUp(); timer.setDuration(d); timer.start(d); }}
                   className={`flex-1 rounded-sm border-b-[3px] border-[#0a0a0f] py-2 text-[10px] font-bold transition-all active:translate-y-[2px] active:border-b-[1px] ${
                     isActive
                       ? 'bg-[#332233] text-[#ff2aa3] shadow-[0_0_10px_rgba(255,42,163,0.3)_inset]'

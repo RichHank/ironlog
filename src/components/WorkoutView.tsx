@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { loadSettings } from '../storage';
-import { est1RM, formatTime, formatWeightCell } from '../utils';
+import { est1RM, formatTime, formatWeightCell, handleHaptic } from '../utils';
+import { playClick, playSuccess, playError, playPowerUp } from '../audio';
 import ExerciseSelector from './ExerciseSelector';
 import AddSetForm from './AddSetForm';
 import RestTimer from './RestTimer';
@@ -124,7 +125,7 @@ export default function WorkoutView({
         </div>
         
         <button
-          onClick={() => { setShowSelector(true); handleHaptic(); }}
+          onClick={() => { playPowerUp(); setShowSelector(true); handleHaptic(); }}
           className="btn-primary mt-12 text-xl px-10 py-4 shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.7)]"
         >
           INITIATE PROTOCOL
@@ -157,8 +158,8 @@ export default function WorkoutView({
         </div>
         <div className="flex gap-2 items-center">
           <VoiceButton onResult={voice.execute} />
-          <button onClick={onDiscard} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
-          <button onClick={onFinish} className="btn-primary min-h-touch px-3 py-1.5 text-xs">Finish</button>
+          <button onClick={() => { playError(); onDiscard(); }} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
+          <button onClick={() => { playSuccess(); onFinish(); }} className="btn-primary min-h-touch px-3 py-1.5 text-xs">Finish</button>
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export default function WorkoutView({
           <div key={ex.id} className={`card overflow-hidden ${isActive ? 'border-vapor-cyan/40 ring-1 ring-vapor-cyan/20' : ''}`}>
             {/* Exercise header */}
             <button
-              onClick={() => toggleExercise(ex.id)}
+              onClick={() => { playClick(); toggleExercise(ex.id); }}
               className="flex w-full items-center justify-between px-4 py-3 text-left active:bg-zinc-800/40"
             >
               <div className="min-w-0">
@@ -186,10 +187,12 @@ export default function WorkoutView({
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
+                      playClick();
                       const num = window.prompt(`How many sets for ${ex.name}?`);
                       if (!num) return;
                       const count = parseInt(num, 10);
                       if (!isNaN(count) && count > 0 && count <= 20) {
+                        playSuccess();
                         for (let i = 0; i < count; i++) {
                           onAddSet(ex.id, { type: 'normal', weight: null, reps: null, rpe: null });
                         }
@@ -261,8 +264,8 @@ export default function WorkoutView({
                               <td className="py-1.5 px-1"></td>
                               <td className="py-1.5 pl-1">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={saveEdit} className="rounded bg-vapor-pink px-2 py-1 text-xs font-bold text-white">Save</button>
-                                  <button onClick={() => setEditingSet(null)} className="rounded bg-zinc-700 px-2 py-1 text-xs text-vapor-light">Cancel</button>
+                                  <button onClick={() => { playSuccess(); saveEdit(); }} className="rounded bg-vapor-pink px-2 py-1 text-xs font-bold text-white">Save</button>
+                                  <button onClick={() => { playClick(); setEditingSet(null); }} className="rounded bg-zinc-700 px-2 py-1 text-xs text-vapor-light">Cancel</button>
                                 </div>
                               </td>
                             </tr>
@@ -292,8 +295,8 @@ export default function WorkoutView({
                               </td>
                               <td className="py-1.5 pl-2">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => startEdit(ex.id, set)} className="rounded px-1.5 py-0.5 text-xs text-vapor-muted hover:text-zinc-300">Edit</button>
-                                  <button onClick={() => onDeleteSet(ex.id, set.id)} className="min-h-touch min-w-[44px] rounded px-2 py-1.5 text-xs text-vapor-muted hover:text-red-400 flex items-center justify-center">Del</button>
+                                  <button onClick={() => { playClick(); startEdit(ex.id, set); }} className="rounded px-1.5 py-0.5 text-xs text-vapor-muted hover:text-zinc-300">Edit</button>
+                                  <button onClick={() => { playError(); onDeleteSet(ex.id, set.id); }} className="min-h-touch min-w-[44px] rounded px-2 py-1.5 text-xs text-vapor-muted hover:text-red-400 flex items-center justify-center">Del</button>
                                 </div>
                               </td>
                             </tr>
@@ -308,6 +311,7 @@ export default function WorkoutView({
                 <AddSetForm
                   exercise={ex}
                   onAdd={(set) => {
+                    playSuccess();
                     onAddSet(ex.id, set);
                     timer.start();
                   }}
@@ -315,7 +319,7 @@ export default function WorkoutView({
 
                 {/* Delete exercise */}
                 <button
-                  onClick={() => onDeleteExercise(ex.id)}
+                  onClick={() => { playError(); onDeleteExercise(ex.id); }}
                   className="mt-3 min-h-touch text-xs text-vapor-muted/80 hover:text-red-400"
                 >
                   Remove exercise
@@ -328,7 +332,7 @@ export default function WorkoutView({
 
       {/* Add Exercise Button */}
       <button
-        onClick={() => { setShowSelector(true); handleHaptic(); }}
+        onClick={() => { playClick(); setShowSelector(true); handleHaptic(); }}
         className="card flex min-h-touch items-center justify-center gap-2 py-3 font-semibold text-vapor-cyan active:bg-zinc-800/40"
       >
         + Add Exercise
