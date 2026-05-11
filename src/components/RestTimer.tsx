@@ -43,7 +43,7 @@ export default function RestTimer({ timer, activeExercise }: Props) {
   return (
     <div className="relative mx-auto mt-4 max-w-[340px]">
       {/* 80s Alarm Clock Casing */}
-      <div className="relative rounded-t-xl rounded-b-md bg-[#1a1a24] border-b-[6px] border-[#0a0a0f] shadow-[0_15px_30px_rgba(0,0,0,0.8)] pb-4 overflow-hidden">
+      <div className="relative rounded-t-xl rounded-b-md bg-[#1a1a24] border-t-2 border-x-2 border-[#ff2aa3]/40 border-b-[6px] border-b-[#0a0a0f] shadow-[0_0_50px_rgba(255,42,163,0.25),0_20px_40px_rgba(0,0,0,0.9)] pb-4 overflow-hidden">
         {/* Top bevel highlight */}
         <div className="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-[#2a2a35] to-transparent opacity-50" />
         
