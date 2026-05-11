@@ -157,6 +157,64 @@
 
   .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
   .safe-area-top { padding-top: calc(env(safe-area-inset-top) + 0.5rem); }
+
+  /* Insane Logo Styling */
+  .vapor-logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin-bottom: 2rem;
+    z-index: 50;
+  }
+  .ironlog-title {
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: 4rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1;
+    background: linear-gradient(to bottom, #00f5ff 0%, #00f5ff 40%, #ffffff 45%, #b44dff 55%, #ff2aa3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.4));
+    letter-spacing: -0.05em;
+    transform: skewX(-10deg);
+  }
+  .ironlog-title::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    -webkit-text-stroke: 1px #f0e6ff;
+    background: none;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 15px #ff2aa3);
+  }
+  .bodynet-subtitle {
+    font-family: 'Mr Dafoe', cursive !important;
+    font-size: 3.5rem;
+    color: #ff2aa3;
+    text-transform: none;
+    margin: 0;
+    margin-top: -1.5rem;
+    line-height: 1;
+    transform: rotate(-5deg);
+    text-shadow: 0 0 5px #ff2aa3, 0 0 15px #ff2aa3, 2px 2px 0px rgba(0,0,0,0.8);
+  }
+  .vaporwave-body-bg {
+    position: fixed;
+    inset: 0;
+    background-image: url('/vaporwave-bg.png');
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    opacity: 0.35;
+    z-index: -10;
+    pointer-events: none;
+  }
 }
 
 @layer utilities {

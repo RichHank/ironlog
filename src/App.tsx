@@ -412,8 +412,9 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-vapor-black relative z-[1]">
-      <main className="flex-1 overflow-y-auto pb-28">
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-[#020205] relative z-[1] text-vapor-cyan font-display">
+      <div className="vaporwave-body-bg" />
+      <main className="flex-1 overflow-y-auto pb-28 relative z-10">
         {view === 'workout' && (
           <WorkoutView
             session={session}

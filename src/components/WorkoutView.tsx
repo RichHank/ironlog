@@ -117,24 +117,24 @@ export default function WorkoutView({
 
   if (!hasEntries) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 pt-12 animate-fade-in">
-        <SynthwaveSun />
-        <h2 className="mt-2 font-display text-3xl font-black tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-r from-[#ff2aa3] via-[#fede5d] to-[#00f5ff] [text-shadow:none] uppercase">
-          IronLog
-        </h2>
-        <p className="mt-1 text-xs text-[#887baa] tracking-[0.2em] uppercase">Training Log</p>
+      <div className="flex flex-col items-center justify-center px-6 pt-16 animate-fade-in relative z-20">
+        <div className="vapor-logo-container">
+          <h1 className="ironlog-title" data-text="IRONLOG">IRONLOG</h1>
+          <h2 className="bodynet-subtitle">BODYNET_88</h2>
+        </div>
+        
         <button
           onClick={() => { setShowSelector(true); handleHaptic(); }}
-          className="mt-8 min-h-touch rounded-xl border border-[#ff2aa3]/40 bg-[#ff2aa3]/10 px-8 py-3 font-bold text-[#ff2aa3] shadow-[0_0_20px_rgba(255,42,163,0.2)] active:scale-95 transition-all hover:bg-[#ff2aa3]/20 hover:shadow-[0_0_30px_rgba(255,42,163,0.4)]"
+          className="btn-primary mt-12 text-xl px-10 py-4 shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.7)]"
         >
-          Start Workout
+          INITIATE PROTOCOL
         </button>
-        <div className="mt-4 flex items-center gap-2">
-          <div className="h-px flex-1 bg-[#ff2aa3]/15" />
-          <span className="text-[10px] text-[#887baa] uppercase tracking-wider">or speak</span>
-          <div className="h-px flex-1 bg-[#ff2aa3]/15" />
+        <div className="mt-8 flex items-center gap-4 w-full max-w-[200px]">
+          <div className="h-px flex-1 bg-[#00f5ff]/30" />
+          <span className="text-[12px] text-[#00f5ff]/80 tracking-[0.2em] font-bold">OR</span>
+          <div className="h-px flex-1 bg-[#00f5ff]/30" />
         </div>
-        <VoiceButton onResult={voice.execute} className="mt-4" />
+        <VoiceButton onResult={voice.execute} className="mt-8 transform scale-125" />
         <ExerciseSelector
           open={showSelector}
           onClose={() => setShowSelector(false)}
