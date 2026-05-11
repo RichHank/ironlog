@@ -99,10 +99,7 @@ export default function VoiceButton({ onResult, className }: Props) {
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7.001 7.001 0 0 0 6 6.93V20H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.07A7.001 7.001 0 0 0 19 10Z" />
-            </svg>
+            <img src={`${import.meta.env.BASE_URL}icons/voice_mic.png`} alt="Mic" className="w-6 h-6 object-contain mix-blend-screen" />
           )}
           {phase === 'listening' && (
             <span className="absolute inset-0 rounded-full animate-ping bg-[#ff2aa3]/30" />
