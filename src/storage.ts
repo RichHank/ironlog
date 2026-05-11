@@ -35,12 +35,12 @@ function readJSON<T>(key: string, fallback: T): T {
 function writeJSON(key: string, value: unknown): void {
   const serialised = JSON.stringify(value);
   try { localStorage.setItem(key, serialised); } catch { /* quota */ }
-  void idbSet(key, serialised);
+  void idbSet(key, serialised).catch(err => console.error('[storage] IDB write failed:', key, err));
 }
 
 function removeKey(key: string): void {
   try { localStorage.removeItem(key); } catch {}
-  void idbRemove(key);
+  void idbRemove(key).catch(err => console.error('[storage] IDB remove failed:', key, err));
 }
 
 // ── Session ──

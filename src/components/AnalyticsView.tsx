@@ -10,7 +10,8 @@ type Props = {
 
 export default function AnalyticsView({ sessions }: Props) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
-  const prs = useMemo(() => loadPRs(), [sessions]);
+  const [prVersion, setPrVersion] = useState(0);
+  const prs = useMemo(() => loadPRs(), [sessions, prVersion]);
 
   const filteredSessions = useMemo(() => {
     if (selectedPeriod === 'all') return sessions;
@@ -179,7 +180,7 @@ export default function AnalyticsView({ sessions }: Props) {
 
       {/* Recalculate PRs button */}
       <button
-        onClick={() => recalcPRs(sessions)}
+        onClick={() => { recalcPRs(sessions); setPrVersion(v => v + 1); }}
         className="btn-secondary w-full text-sm py-3"
       >
         Recalculate PRs

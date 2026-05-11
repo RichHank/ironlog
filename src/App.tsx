@@ -382,7 +382,7 @@ export default function App() {
       return { ...s, exercises };
     }).filter((s): s is WorkoutSession => s !== null);
 
-    if (updated.length === history.length - 1) {
+    if (!updated.some(s => s.id === sessionId)) {
       showToast('Workout deleted (last set removed)');
       setHistoryDetailId(null);
     } else {

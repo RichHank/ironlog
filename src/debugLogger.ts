@@ -75,7 +75,8 @@ function installIntercept(): void {
     ORIGINALS[level] = (console as any)[level];
     (console as any)[level] = (...args: unknown[]) => {
       ORIGINALS[level](...args);
-      push(level, args);
+      const captureStack = level === 'error' ? new Error().stack : undefined;
+      push(level, args, captureStack);
     };
   }
 
@@ -90,13 +91,13 @@ function installIntercept(): void {
 
 // ── API ──
 
-function push(level: LogLevel, args: unknown[]): void {
+function push(level: LogLevel, args: unknown[], capturedStack?: string): void {
   const entry: LogEntry = {
     id: idCounter++,
     level,
     args,
     timestamp: Date.now(),
-    stack: level === 'error' ? new Error().stack?.split('\n').slice(2).join('\n') : undefined,
+    stack: capturedStack?.split('\n').slice(2).join('\n'),
   };
   entries.push(entry);
   if (entries.length > MAX_ENTRIES) entries = entries.slice(-MAX_ENTRIES);

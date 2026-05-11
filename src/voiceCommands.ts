@@ -123,10 +123,23 @@ const MATCHERS: Matcher[] = [
     name: 'delete_set',
     baseConfidence: 0.9,
     run: (t) => {
+      const ordinals: Record<string, number> = {
+        first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+        '1st': 1, '2nd': 2, '3rd': 3, '4th': 4, '5th': 5,
+      };
+      const wordNums: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
       let m = t.match(/^(?:delete|remove)\s+(?:the\s+)?last\s+set\s*$/i);
       if (m) return { type: 'delete_set', relative: 'last' };
       m = t.match(/^(?:delete|remove)\s+(?:the\s+)?set\s+(\d+)\s*$/i);
       if (m) return { type: 'delete_set', setIndex: parseInt(m[1]) };
+      m = t.match(/^(?:delete|remove)\s+(?:the\s+)?(\w+(?:\s+\w+)?)\s+set\s*$/i);
+      if (m) {
+        const key = m[1].toLowerCase();
+        if (ordinals[key]) return { type: 'delete_set', setIndex: ordinals[key] };
+        if (wordNums[key]) return { type: 'delete_set', setIndex: wordNums[key] };
+      }
+      m = t.match(/^(?:delete|remove)\s+set\s+(one|two|three|four|five)\s*$/i);
+      if (m) return { type: 'delete_set', setIndex: wordNums[m[1].toLowerCase()] };
       return null;
     },
   },
@@ -138,6 +151,7 @@ const MATCHERS: Matcher[] = [
       if (!m) return null;
       const name = m[1].trim();
       if (/^(?:set\b|last\b|that\b|it\b|workout\b|exercise\s*$)/i.test(name)) return null;
+      if (/^(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th|one|two|three|four|five)\s+set$/i.test(name)) return null;
       if (/\bset\s+\d+/i.test(name)) return null;
       return { type: 'delete_exercise', name: name.replace(/\bexercise\b/i, '').trim() || name };
     },

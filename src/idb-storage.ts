@@ -77,23 +77,7 @@ export async function idbRemove(key: string): Promise<void> {
   }
 }
 
-// Best-effort flush of localStorage into IDB when the page hides. Acts as a
-// belt-and-braces safety net in case a write-through missed; can go away once
-// every writer in storage.ts is confirmed to use idbSet directly.
-let visibilitySetup = false;
-export function setupVisibilitySync(): void {
-  if (visibilitySetup) return;
-  visibilitySetup = true;
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'hidden') return;
-    const snapshot: Array<[string, string]> = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k) continue;
-      const v = localStorage.getItem(k);
-      if (v != null) snapshot.push([k, v]);
-    }
-    // Fire writes in parallel; iOS may suspend us mid-loop.
-    void Promise.allSettled(snapshot.map(([k, v]) => idbSet(k, v)));
-  });
-}
+// All writers in storage.ts use write-through (idbSet in writeJSON/removeKey),
+// so a visibility-change flush is no longer needed. The function is kept as a
+// no-op to avoid breaking the call site in App.tsx.
+export function setupVisibilitySync(): void {}

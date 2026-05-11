@@ -297,7 +297,7 @@ export default function WorkoutView({
                 {/* Delete exercise */}
                 <button
                   onClick={() => onDeleteExercise(ex.id)}
-                  className="mt-3 text-xs text-zinc-600 hover:text-red-400"
+                  className="mt-3 min-h-touch text-xs text-zinc-600 hover:text-red-400"
                 >
                   Remove exercise
                 </button>

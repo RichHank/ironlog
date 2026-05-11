@@ -108,7 +108,7 @@ export function shareWorkoutAsFit(session: WorkoutSession): Promise<ShareOutcome
   return share({ files: [chosen], title: 'IronLog Workout' })
     .then((): ShareOutcome => ({ result: 'shared', platform, trace: trace.join(' ') }))
     .catch((err: unknown): ShareOutcome => {
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
         return { result: 'cancelled', platform, trace: trace.join(' ') };
       }
       trace.push(`share-err:${err instanceof Error ? err.name : 'unknown'}`);

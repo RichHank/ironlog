@@ -131,7 +131,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                 {pushing ? 'Pushing…' : 'Push to Strava'}
               </button>
             )}
-            <button onClick={() => onDelete(session.id)} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
+            <button onClick={() => { if (window.confirm('Delete this workout?')) onDelete(session.id); }} className="btn-danger min-h-touch px-3 py-1.5 text-xs">Delete</button>
           </div>
         </div>
         {showGarminHelp && (
@@ -247,7 +247,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                           <td className="py-1.5 px-1 text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEdit(ex.id, set)} className="text-xs text-zinc-600 hover:text-zinc-300">Edit</button>
-                              <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="text-xs text-zinc-600 hover:text-red-400">Del</button>
+                              <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="min-h-touch min-w-[44px] text-xs text-zinc-600 hover:text-red-400">Del</button>
                             </div>
                           </td>
                         </tr>
