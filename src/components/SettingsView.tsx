@@ -147,11 +147,13 @@ export default function SettingsView({ onShowToast }: Props) {
                     const text = await file.text();
                     const data = JSON.parse(text);
                     if (data.history) {
-                      const { loadHistory, saveHistory, loadRoutines, saveRoutines, loadPRs, saveMeasurements } = await import('../storage');
+                      const { loadHistory, saveHistory, loadRoutines, saveRoutines, loadPRs, savePRs, loadMeasurements, saveMeasurements } = await import('../storage');
                       const hist = loadHistory();
                       const merged = [...data.history, ...hist].filter((s: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex(x => x.id === s.id) === i);
                       saveHistory(merged);
                       if (data.routines) { const r = loadRoutines(); const mr = [...data.routines, ...r].filter((rt: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex(x => x.id === rt.id) === i); saveRoutines(mr); }
+                      if (data.prs) { const existingPRs = loadPRs(); const mergedPRs = [...data.prs, ...existingPRs].filter((p: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex(x => x.id === p.id) === i); savePRs(mergedPRs); }
+                      if (data.measurements) { const existingMeas = loadMeasurements(); const mergedMeas = [...data.measurements, ...existingMeas].filter((m: { id: string }, i: number, arr: { id: string }[]) => arr.findIndex(x => x.id === m.id) === i); saveMeasurements(mergedMeas); }
                       onShowToast('Data imported');
                       window.location.reload();
                     }

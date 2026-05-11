@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
 import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB } from './storage';
 import { setupVisibilitySync } from './idb-storage';
@@ -17,6 +17,7 @@ import AnalyticsView from './components/AnalyticsView';
 import SettingsView from './components/SettingsView';
 import NavBar from './components/NavBar';
 import BootMascot from './components/BootMascot';
+import DebugConsole from './components/DebugConsole';
 import { formatWeightCell } from './utils';
 
 export type View = 'workout' | 'history' | 'calendar' | 'analytics' | 'routines' | 'settings';
@@ -26,7 +27,9 @@ export default function App() {
   const [session, setSession] = useState<WorkoutSession | null>(loadSession);
   const [history, setHistory] = useState<WorkoutSession[]>(loadHistory);
   const [historyDetailId, setHistoryDetailId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; action?: { label: string; onClick: () => void } } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastDeletedSet = useRef<{ exerciseId: string; setId: string; set: WorkoutSet } | null>(null);
 
   const settings = loadSettings();
   const timer = useTimer(settings.restTimerDuration);
@@ -86,10 +89,12 @@ export default function App() {
     }
   }, []);
 
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
+  const showToast = useCallback((msg: string, action?: { label: string; onClick: () => void }) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message: msg, action });
     if (window.navigator?.vibrate) window.navigator.vibrate(10);
-    setTimeout(() => setToast(null), 1800);
+    const duration = action ? 4000 : 1800;
+    toastTimer.current = setTimeout(() => setToast(null), duration);
   }, []);
 
   // Handle Strava OAuth redirect (?code=&state=)
@@ -119,20 +124,9 @@ export default function App() {
     if (session) saveSession(session);
   }, [session]);
 
-  // ── Session management ──
-  const ensureSession = useCallback((): WorkoutSession => {
-    if (session) return session;
-    const s: WorkoutSession = {
-      id: generateId(), startedAt: Date.now(), completedAt: Date.now(),
-      exercises: [], notes: undefined,
-    };
-    setSession(s);
-    return s;
-  }, [session]);
-
   const addExercise = useCallback((exerciseKey: string, name: string) => {
     setSession(prev => {
-      const s = prev ?? { id: generateId(), startedAt: Date.now(), completedAt: Date.now(), exercises: [], notes: undefined };
+      const s = prev ?? { id: generateId(), startedAt: Date.now(), completedAt: 0, exercises: [], notes: undefined };
       const ex: ExerciseLog = { id: generateId(), exerciseKey, name, sets: [] };
       return { ...s, exercises: [...s.exercises, ex] };
     });
@@ -141,7 +135,7 @@ export default function App() {
 
   const addExerciseWithSets = useCallback((exerciseKey: string, name: string, sets: Omit<WorkoutSet, 'id' | 'completedAt'>[]) => {
     setSession(prev => {
-      const s = prev ?? { id: generateId(), startedAt: Date.now(), completedAt: Date.now(), exercises: [], notes: undefined };
+      const s = prev ?? { id: generateId(), startedAt: Date.now(), completedAt: 0, exercises: [], notes: undefined };
       const ex: ExerciseLog = {
         id: generateId(), exerciseKey, name,
         sets: sets.map(set => ({ ...set, id: generateId(), completedAt: Date.now() })),
@@ -182,21 +176,49 @@ export default function App() {
   }, []);
 
   const deleteSet = useCallback((exerciseId: string, setId: string) => {
+    let foundSet: WorkoutSet | null = null;
     setSession(prev => {
       if (!prev) return prev;
-      const exercises = prev.exercises
-        .map(ex => ex.id === exerciseId ? {
-          ...ex,
-          sets: ex.sets.filter(s => s.id !== setId),
-        } : ex)
-        .filter(ex => ex.sets.length > 0 || ex.notes);
-      if (exercises.length === 0) {
-        clearSession();
-        return null;
+      for (const ex of prev.exercises) {
+        if (ex.id === exerciseId) {
+          const set = ex.sets.find(s => s.id === setId);
+          if (set) foundSet = set;
+          break;
+        }
       }
-      return { ...prev, exercises };
+      return {
+        ...prev,
+        exercises: prev.exercises.map(ex =>
+          ex.id === exerciseId
+            ? { ...ex, sets: ex.sets.filter(s => s.id !== setId) }
+            : ex
+        ),
+      };
     });
-  }, []);
+    if (foundSet) {
+      lastDeletedSet.current = { exerciseId, setId, set: foundSet };
+      showToast('Set deleted', {
+        label: 'Undo',
+        onClick: () => {
+          const info = lastDeletedSet.current;
+          if (!info) return;
+          setSession(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              exercises: prev.exercises.map(ex =>
+                ex.id === info.exerciseId
+                  ? { ...ex, sets: [...ex.sets, info.set] }
+                  : ex
+              ),
+            };
+          });
+          lastDeletedSet.current = null;
+          showToast('Set restored');
+        },
+      });
+    }
+  }, [showToast]);
 
   const reorderExercises = useCallback((exerciseIds: string[]) => {
     setSession(prev => {
@@ -212,15 +234,19 @@ export default function App() {
   }, []);
 
   const deleteExercise = useCallback((exerciseId: string) => {
+    let shouldClear = false;
     setSession(prev => {
       if (!prev) return prev;
       const exercises = prev.exercises.filter(ex => ex.id !== exerciseId);
       if (exercises.length === 0) {
-        clearSession();
+        shouldClear = true;
         return null;
       }
       return { ...prev, exercises };
     });
+    if (shouldClear) {
+      clearSession();
+    }
   }, []);
 
   const finishWorkout = useCallback(() => {
@@ -233,9 +259,9 @@ export default function App() {
     const updated = addWorkout(completed);
     setHistory(updated);
     setSession(null);
+    updatePRsAfterAdd(completed);
     clearSession();
     timer.reset();
-    updatePRsAfterAdd(completed);
     showToast('Workout saved!');
     setView('history');
 
@@ -307,7 +333,7 @@ export default function App() {
 
   const startFromRoutine = useCallback((exercises: { key: string; name: string }[]) => {
     const s: WorkoutSession = {
-      id: generateId(), startedAt: Date.now(), completedAt: Date.now(), exercises: [], notes: undefined,
+      id: generateId(), startedAt: Date.now(), completedAt: 0, exercises: [], notes: undefined,
     };
     for (const ex of exercises) {
       s.exercises.push({ id: generateId(), exerciseKey: ex.key, name: ex.name, sets: [] });
@@ -433,9 +459,14 @@ export default function App() {
       <NavBar view={view} onChange={setView} hasActiveSession={!!session && session.exercises.some(e => e.sets.length > 0)} />
 
       {toast && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-36 z-50 flex justify-center">
-          <div className="animate-float-up rounded-full bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-5 py-2 text-sm font-semibold text-white shadow-[0_0_15px_rgba(255,42,163,0.4)]">
-            {toast}
+        <div className="pointer-events-auto fixed inset-x-0 bottom-36 z-50 flex justify-center">
+          <div className="animate-float-up rounded-full bg-gradient-to-r from-[#ff2aa3] to-[#ff2e88] px-5 py-2 text-sm font-semibold text-white shadow-[0_0_15px_rgba(255,42,163,0.4)] flex items-center gap-3">
+            <span>{toast.message}</span>
+            {toast.action && (
+              <button onClick={toast.action.onClick} className="font-bold underline underline-offset-2 hover:text-white/80 whitespace-nowrap">
+                {toast.action.label}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -446,6 +477,7 @@ export default function App() {
       )}
 
       <BootMascot />
+      <DebugConsole />
     </div>
   );
 }

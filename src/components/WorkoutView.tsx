@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { loadSettings } from '../storage';
 import { est1RM, formatTime, formatWeightCell } from '../utils';
@@ -38,6 +38,11 @@ export default function WorkoutView({
   const [editingSet, setEditingSet] = useState<{ exerciseId: string; setId: string } | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<WorkoutSet>>({});
   const [sessionNotes, setSessionNotes] = useState(session?.notes ?? '');
+
+  // Sync notes when switching to a different session (prevents cross-contamination)
+  useEffect(() => {
+    setSessionNotes(session?.notes ?? '');
+  }, [session?.id]);
 
   const hasEntries = session && (session.exercises.length > 0 || (session.exercises.some(e => e.sets.length > 0)));
 
@@ -200,7 +205,7 @@ export default function WorkoutView({
 
                 {/* Sets table */}
                 {ex.sets.length > 0 && (
-                  <div className="mt-2 overflow-x-auto">
+                  <div className="mt-2 mb-4 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-xs text-zinc-500 uppercase tracking-wider">
@@ -269,7 +274,7 @@ export default function WorkoutView({
                               <td className="py-1.5 pl-2">
                                 <div className="flex justify-end gap-1">
                                   <button onClick={() => startEdit(ex.id, set)} className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-zinc-300">Edit</button>
-                                  <button onClick={() => onDeleteSet(ex.id, set.id)} className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-red-400">Del</button>
+                                  <button onClick={() => onDeleteSet(ex.id, set.id)} className="min-h-touch min-w-[44px] rounded px-2 py-1.5 text-xs text-zinc-500 hover:text-red-400 flex items-center justify-center">Del</button>
                                 </div>
                               </td>
                             </tr>

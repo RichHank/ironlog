@@ -113,7 +113,7 @@ export function loadPRs(): PersonalRecord[] {
   return readJSON<PersonalRecord[]>(PRS_KEY, []);
 }
 
-function savePRs(prs: PersonalRecord[]): void {
+export function savePRs(prs: PersonalRecord[]): void {
   writeJSON(PRS_KEY, prs);
 }
 
