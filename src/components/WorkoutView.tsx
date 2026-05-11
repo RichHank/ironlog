@@ -65,6 +65,20 @@ export default function WorkoutView({
     return map;
   }, [history, session]);
 
+  // Look up full previous sets list per exercise
+  const prevWorkoutSetsLookup = useMemo(() => {
+    if (!session || history.length === 0) return new Map<string, WorkoutSet[]>();
+    const map = new Map<string, WorkoutSet[]>();
+    for (const s of history) {
+      for (const ex of s.exercises) {
+        if (!map.has(ex.exerciseKey) && ex.sets.length > 0) {
+          map.set(ex.exerciseKey, ex.sets);
+        }
+      }
+    }
+    return map;
+  }, [history, session]);
+
   const totalSets = useMemo(() =>
     session?.exercises.reduce((s, e) => s + e.sets.length, 0) ?? 0
   , [session]);
@@ -310,6 +324,7 @@ export default function WorkoutView({
                 {/* Add set form */}
                 <AddSetForm
                   exercise={ex}
+                  prevSets={prevWorkoutSetsLookup.get(ex.exerciseKey)}
                   onAdd={(set) => {
                     playSuccess();
                     onAddSet(ex.id, set);

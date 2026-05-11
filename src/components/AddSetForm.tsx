@@ -6,6 +6,7 @@ import { loadSettings } from '../storage';
 type Props = {
   exercise: ExerciseLog;
   onAdd: (set: Omit<WorkoutSet, 'id' | 'completedAt'>) => void;
+  prevSets?: WorkoutSet[];
 };
 
 const SET_TYPES: { value: SetType; label: string }[] = [
@@ -15,12 +16,16 @@ const SET_TYPES: { value: SetType; label: string }[] = [
   { value: 'failure', label: 'Failure' },
 ];
 
-export default function AddSetForm({ exercise, onAdd }: Props) {
+export default function AddSetForm({ exercise, onAdd, prevSets }: Props) {
   const lastSet = exercise.sets.length > 0 ? exercise.sets[exercise.sets.length - 1] : null;
   const [weight, setWeight] = useState(lastSet?.weight?.toString() ?? '');
   const [reps, setReps] = useState(lastSet?.reps?.toString() ?? '');
   const [rpe, setRpe] = useState('');
   const [type, setType] = useState<SetType>('normal');
+
+  const currentSetIndex = exercise.sets.length;
+  const prevSetForThisIndex = prevSets && prevSets[currentSetIndex];
+  const unit = loadSettings().weightUnit;
 
   const handleSubmit = useCallback(() => {
     if (!reps || reps === '0') return;
@@ -33,8 +38,41 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
     setRpe('');
   }, [weight, reps, rpe, type, onAdd]);
 
+  const handleCopyPrev = () => {
+    if (prevSetForThisIndex) {
+      if (prevSetForThisIndex.weight !== null && prevSetForThisIndex.weight !== undefined) {
+        setWeight(prevSetForThisIndex.weight.toString());
+      } else {
+        setWeight('');
+      }
+      if (prevSetForThisIndex.reps !== null && prevSetForThisIndex.reps !== undefined) {
+        setReps(prevSetForThisIndex.reps.toString());
+      }
+      if (prevSetForThisIndex.rpe !== null && prevSetForThisIndex.rpe !== undefined) {
+        setRpe(prevSetForThisIndex.rpe.toString());
+      }
+    }
+  };
+
   return (
     <div className="mt-3 border-t border-zinc-800/50 pt-3">
+      {prevSetForThisIndex && (
+        <button
+          onClick={handleCopyPrev}
+          className="mt-0.5 mb-2.5 px-2 py-1 rounded border border-[#ff2aa3]/10 bg-[#ff2aa3]/5 hover:bg-[#ff2aa3]/10 hover:border-[#ff2aa3]/20 flex items-center justify-between gap-1.5 text-[10px] text-[#ff2aa3]/50 font-mono tracking-wider italic animate-pulse cursor-pointer w-full text-left transition-colors"
+          title="Click to auto-fill these values"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff2aa3]/50 shadow-[0_0_4px_#ff2aa3]" />
+            <span>
+              PREV.SET_{currentSetIndex + 1}: {prevSetForThisIndex.weight !== null && prevSetForThisIndex.weight !== undefined ? `${prevSetForThisIndex.weight}${unit}` : 'BW'} × {prevSetForThisIndex.reps ?? '?'} REPS
+              {prevSetForThisIndex.rpe ? ` @ RPE ${prevSetForThisIndex.rpe}` : ''}
+            </span>
+          </span>
+          <span className="text-[9px] text-vapor-muted uppercase text-shadow-[0_0_4px_rgba(255,42,163,0.2)]">TAP TO FILL ⇲</span>
+        </button>
+      )}
+
       <div className="flex items-end gap-2 flex-wrap">
         <div className="flex-1 min-w-[80px]">
           <label className="text-[10px] text-vapor-muted uppercase tracking-wider">Weight {lastSet?.weight ? `(last: ${lastSet.weight})` : ''}</label>
@@ -43,7 +81,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
             inputMode="decimal"
             value={weight}
             onChange={e => setWeight(e.target.value)}
-            placeholder={weightPlaceholder(exercise.exerciseKey, loadSettings().weightUnit)}
+            placeholder={prevSetForThisIndex?.weight !== null && prevSetForThisIndex?.weight !== undefined ? prevSetForThisIndex.weight.toString() : weightPlaceholder(exercise.exerciseKey, unit)}
             className="input-field w-full text-right font-mono"
           />
         </div>
@@ -54,7 +92,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
             inputMode="numeric"
             value={reps}
             onChange={e => setReps(e.target.value)}
-            placeholder="0"
+            placeholder={prevSetForThisIndex?.reps !== null && prevSetForThisIndex?.reps !== undefined ? prevSetForThisIndex.reps.toString() : '0'}
             className="input-field w-full text-right font-mono"
           />
         </div>
@@ -65,7 +103,7 @@ export default function AddSetForm({ exercise, onAdd }: Props) {
             inputMode="decimal"
             value={rpe}
             onChange={e => setRpe(e.target.value)}
-            placeholder="-"
+            placeholder={prevSetForThisIndex?.rpe !== null && prevSetForThisIndex?.rpe !== undefined ? prevSetForThisIndex.rpe.toString() : '-'}
             className="input-field w-full text-right font-mono"
           />
         </div>
