@@ -56,7 +56,12 @@ export default function RoutinesView({ onStart, onShowToast }: Props) {
 
       {routines.length === 0 ? (
         <div className="py-16 text-center">
-          <img src={`${import.meta.env.BASE_URL}icons/nav_routines.png`} alt="Folder" className="w-16 h-16 mx-auto mb-4 object-contain mix-blend-screen" />
+          <div className="flex justify-center mb-6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ff2aa3" strokeWidth="1" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(255,42,163,0.8)]">
+              <path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />
+              <line x1="3" y1="8" x2="21" y2="8" strokeWidth="1" />
+            </svg>
+          </div>
           <p className="mt-3 text-sm text-vapor-muted">No routines yet</p>
           <p className="text-xs text-vapor-muted mt-1">Create a template to quickly start workouts</p>
         </div>

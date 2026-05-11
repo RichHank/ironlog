@@ -63,9 +63,9 @@ export default function VoiceButton({ onResult, className }: Props) {
       : phase === 'processing'
         ? 'bg-[#00f5ff] text-zinc-900 shadow-[0_0_20px_rgba(0,245,255,0.6)] scale-105'
         : phase === 'done'
-          ? 'bg-emerald-500 text-white shadow-[0_0_18px_rgba(16,185,129,0.55)]'
+          ? 'border-2 border-[#05ffa1] bg-[#05ffa1]/10 text-[#05ffa1] shadow-[0_0_20px_rgba(5,255,161,0.6)]'
           : phase === 'error'
-            ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.55)]'
+            ? 'border-2 border-[#fe4450] bg-[#fe4450]/10 text-[#fe4450] shadow-[0_0_20px_rgba(254,68,80,0.6)]'
             : 'bg-zinc-800/80 text-vapor-muted hover:text-[#00f5ff] hover:shadow-[0_0_12px_rgba(0,245,255,0.3)] border border-vapor-magenta/50 hover:border-[#00f5ff]/40';
 
   const label =

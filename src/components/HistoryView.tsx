@@ -27,7 +27,15 @@ export default function HistoryView({ sessions, onSelect }: Props) {
       <div className="px-3 pt-4 sm:px-4">
         <p className="text-xs text-vapor-muted uppercase tracking-wider">History</p>
         <div className="py-16 text-center">
-          <img src={`${import.meta.env.BASE_URL}icons/nav_history.png`} alt="History" className="w-16 h-16 mx-auto mb-4 object-contain mix-blend-screen" />
+          <div className="flex justify-center mb-6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00f5ff" strokeWidth="1" className="w-20 h-20 drop-shadow-[0_0_15px_rgba(0,245,255,0.8)]">
+              <rect x="5" y="3" width="14" height="19" rx="2" />
+              <line x1="8" y1="7" x2="16" y2="7" />
+              <line x1="8" y1="11" x2="16" y2="11" />
+              <line x1="8" y1="15" x2="12" y2="15" />
+              <path d="M9 3V1h6v2" />
+            </svg>
+          </div>
           <p className="mt-3 text-sm text-vapor-muted">No workouts yet</p>
           <p className="text-xs text-vapor-muted mt-1">Complete a workout to see it here</p>
         </div>
