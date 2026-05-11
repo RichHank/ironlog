@@ -182,7 +182,26 @@ export default function WorkoutView({
                 <p className="truncate text-base font-bold text-[#00f5ff] uppercase tracking-widest text-shadow-[0_0_8px_#00f5ff]">{ex.name}.NODE</p>
               </div>
               <div className="ml-2 flex items-center gap-2 flex-shrink-0">
-                <span className="chip bg-vapor-navy text-vapor-muted">{ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''}</span>
+                {ex.sets.length === 0 ? (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const num = window.prompt(`How many sets for ${ex.name}?`);
+                      if (!num) return;
+                      const count = parseInt(num, 10);
+                      if (!isNaN(count) && count > 0 && count <= 20) {
+                        for (let i = 0; i < count; i++) {
+                          onAddSet(ex.id, { type: 'normal', weight: null, reps: null, rpe: null });
+                        }
+                      }
+                    }}
+                    className="chip bg-[#00f5ff]/20 text-[#00f5ff] hover:bg-[#00f5ff]/40 transition-colors uppercase cursor-pointer shadow-[0_0_10px_rgba(0,245,255,0.3)]"
+                  >
+                    0 SETS
+                  </button>
+                ) : (
+                  <span className="chip bg-vapor-navy text-vapor-muted uppercase">{ex.sets.length} SET{ex.sets.length !== 1 ? 'S' : ''}</span>
+                )}
                 {exVolume > 0 && <span className="chip bg-vapor-pink/15 text-vapor-cyan">{exVolume.toLocaleString()} {unit}</span>}
               </div>
             </button>
