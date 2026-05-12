@@ -49,10 +49,11 @@ export default function App() {
   // saveSession/saveHistory etc.)
   useEffect(() => { setupVisibilitySync(); }, []);
 
-  // Apply persisted SFX volume/mute on mount
+  // Apply persisted audio settings on mount
   useEffect(() => {
     setSfxVolume(settings.soundEffectsVolume ?? 75);
     setSfxMuted(settings.soundEffectsMuted ?? false);
+    getVaporSynth().setVolume(settings.musicVolume ?? 30);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cold-start hydration. localStorage may have been evicted by iOS but IDB

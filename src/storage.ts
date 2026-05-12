@@ -236,7 +236,7 @@ export function addMeasurement(m: BodyMeasurement): BodyMeasurement[] {
 
 // ── Settings ──
 export function loadSettings(): AppSettings {
-  return readJSON<AppSettings>(SETTINGS_KEY, { weightUnit: 'lb', restTimerDuration: 90, soundEffectsVolume: 75, soundEffectsMuted: false });
+  return readJSON<AppSettings>(SETTINGS_KEY, { weightUnit: 'lb', restTimerDuration: 90, soundEffectsVolume: 75, soundEffectsMuted: false, musicVolume: 30 });
 }
 
 export function saveSettings(s: AppSettings): void {
@@ -317,7 +317,7 @@ export async function hydrateFromIDB(): Promise<{
     idbGetJSON<Routine[]>(ROUTINES_KEY, []),
     idbGetJSON<PersonalRecord[]>(PRS_KEY, []),
     idbGetJSON<BodyMeasurement[]>(MEASUREMENTS_KEY, []),
-    idbGetJSON<AppSettings>(SETTINGS_KEY, { weightUnit: 'lb', restTimerDuration: 90, soundEffectsVolume: 75, soundEffectsMuted: false }),
+    idbGetJSON<AppSettings>(SETTINGS_KEY, { weightUnit: 'lb', restTimerDuration: 90, soundEffectsVolume: 75, soundEffectsMuted: false, musicVolume: 30 }),
   ]);
   return { session, history, routines, prs, measurements, settings };
 }

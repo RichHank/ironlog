@@ -17,6 +17,7 @@ export default function SettingsView({ onShowToast }: Props) {
   const [settings, setSettings] = useState(loadSettings);
   const [tab, setTab] = useState<Tab>('prefs');
   const [musicMuted, setMusicMuted] = useState(() => getVaporSynth().isMuted());
+  const [musicVolume, setMusicVolState] = useState(() => getVaporSynth().getVolume());
   const [sfxVolume, setSfxVolState] = useState(() => getSfxVolume());
   const [sfxMuted, setSfxMutedState] = useState(() => getSfxMuted());
 
@@ -26,6 +27,14 @@ export default function SettingsView({ onShowToast }: Props) {
     synth.setMuted(next);
     setMusicMuted(next);
     if (!next) synth.start().catch(() => {});
+  };
+
+  const handleMusicVolumeChange = (vol: number) => {
+    setMusicVolState(vol);
+    getVaporSynth().setVolume(vol);
+    const s = loadSettings();
+    s.musicVolume = vol;
+    saveSettings(s);
   };
 
   const handleSfxVolumeChange = (vol: number) => {
@@ -131,6 +140,21 @@ export default function SettingsView({ onShowToast }: Props) {
                 {musicMuted ? 'Off' : 'On'}
               </button>
             </div>
+            {!musicMuted && (
+              <div className="flex items-center gap-3 mt-3">
+                <span className="text-xs text-vapor-muted w-8 text-right">0</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={musicVolume}
+                  onChange={e => handleMusicVolumeChange(Number(e.target.value))}
+                  className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ accentColor: '#ff2aa3' }}
+                />
+                <span className="text-xs text-vapor-muted w-10">{musicVolume}</span>
+              </div>
+            )}
           </div>
 
           {/* ── Sound Effects ── */}

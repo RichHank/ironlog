@@ -82,4 +82,5 @@ export interface AppSettings {
   restTimerDuration: number;
   soundEffectsVolume: number;   // 0-100, default 75
   soundEffectsMuted: boolean;
+  musicVolume: number;          // 0-100, default 30
 }
