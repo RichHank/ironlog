@@ -83,4 +83,5 @@ export interface AppSettings {
   soundEffectsVolume: number;   // 0-100, default 75
   soundEffectsMuted: boolean;
   musicVolume: number;          // 0-100, default 30
+  fontScale: number;            // percentage: 87.5 | 100 | 112.5 | 125, default 100
 }

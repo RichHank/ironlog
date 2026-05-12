@@ -6,6 +6,7 @@ import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushW
 import type { ShareOutcome } from './share';
 import { getVaporSynth } from './vaporSynth';
 import { setSfxVolume, setSfxMuted } from './audio';
+import { applyFontScale } from './fontScale';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -54,6 +55,7 @@ export default function App() {
     setSfxVolume(settings.soundEffectsVolume ?? 75);
     setSfxMuted(settings.soundEffectsMuted ?? false);
     getVaporSynth().setVolume(settings.musicVolume ?? 30);
+    applyFontScale(settings.fontScale ?? 100);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cold-start hydration. localStorage may have been evicted by iOS but IDB

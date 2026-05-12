@@ -6,6 +6,7 @@ import BodyMeasurements from './BodyMeasurements';
 import PlateCalculator from './PlateCalculator';
 import StravaSection from './StravaSection';
 import { getVaporSynth } from '../vaporSynth';
+import { FONT_PRESETS, applyFontScale } from '../fontScale';
 
 type Props = {
   onShowToast: (msg: string) => void;
@@ -20,6 +21,7 @@ export default function SettingsView({ onShowToast }: Props) {
   const [musicVolume, setMusicVolState] = useState(() => getVaporSynth().getVolume());
   const [sfxVolume, setSfxVolState] = useState(() => getSfxVolume());
   const [sfxMuted, setSfxMutedState] = useState(() => getSfxMuted());
+  const [fontScale, setFontScaleState] = useState(() => loadSettings().fontScale ?? 100);
 
   const toggleMusic = () => {
     const synth = getVaporSynth();
@@ -27,6 +29,14 @@ export default function SettingsView({ onShowToast }: Props) {
     synth.setMuted(next);
     setMusicMuted(next);
     if (!next) synth.start().catch(() => {});
+  };
+
+  const handleFontScaleChange = (pct: number) => {
+    setFontScaleState(pct);
+    applyFontScale(pct);
+    const s = loadSettings();
+    s.fontScale = pct;
+    saveSettings(s);
   };
 
   const handleMusicVolumeChange = (vol: number) => {
@@ -186,6 +196,23 @@ export default function SettingsView({ onShowToast }: Props) {
                 <span className="text-xs text-vapor-muted w-10">{sfxVolume}</span>
               </div>
             )}
+          </div>
+
+          {/* ── Font Size ── */}
+          <div className="card p-4">
+            <p className="text-sm font-semibold text-vapor-pink mb-3">Font Size</p>
+            <p className="text-[11px] text-vapor-muted mb-3">Scales all text proportionally. Layout spacing adjusts with it.</p>
+            <div className="flex gap-2">
+              {FONT_PRESETS.map(p => (
+                <button
+                  key={p.pct}
+                  onClick={() => handleFontScaleChange(p.pct)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-semibold ${fontScale === p.pct ? 'bg-vapor-pink text-white' : 'bg-vapor-navy text-vapor-muted'}`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
