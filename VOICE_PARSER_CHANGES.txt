@@ -1,0 +1,269 @@
+IRONLOG VOICE PARSER OVERHAUL — Technical Breakdown
+======================================================
+
+Four files modified: parseTypes.ts, voiceJargon.ts, parser.ts, aiParser.ts
+
+
+1. parseTypes.ts — TYPE SYSTEM EXPANSION
+========================================
+
+Set-level boolean flags — Each set now carries explicit semantic booleans
+alongside the pre-existing `type` union:
+
+  isWarmup?: boolean;
+  isDropSet?: boolean;
+  isAMRAP?: boolean;
+  isBodyweight?: boolean;
+  failed?: boolean;
+
+Previously, the only way to signal these was through `type: 'warmup' |
+'drop' | 'failure'` or by convention in `note` (AMRAP was stored as a
+note string). The booleans give the AI parser a clean target schema and
+let downstream UI code branch on simple flags rather than string-matching
+`type`.
+
+needsConfirmation on ParseResult — Set to true when confidence is
+"medium". This gives the caller a signal to prompt the user before
+blindly logging sets the parser isn't sure about.
+
+SetData interface exported — A standalone SetData interface matching the
+AI response schema, usable by the AI parser layer without coupling to the
+full ParseResult shape.
+
+
+2. voiceJargon.ts — FOUR-STAGE NORMALIZATION PIPELINE
+=====================================================
+
+The old file had one pass: PHONETIC_FIXES (ASR error correction like
+"am wrap" -> "amrap") followed by a fuzzy jargon matcher for token-level
+typos.
+
+The new pipeline runs four stages in order:
+
+Stage 1: Phonetic fixes (unchanged)
+------------------------------------
+Corrects voice recognition artifacts: "I'm wrapping" -> "amrap",
+"drop sat" -> "drop set", "are P E" -> "rpe". These run first because
+they fix word-boundary errors that would confuse later regexes.
+
+Stage 2: Jargon expansions (new — 20+ rules)
+---------------------------------------------
+Semantic normalization applied before the parser sees the text:
+
+Category            Example input                        Output
+---------------------------------------------------------------------------
+AMRAP               max reps, to failure, burnout        AMRAP
+Drop sets           drop sit, dropset, drop-set          drop set
+Rep slang           for a double, got a triple           for 2 reps
+Heavy patterns      heavy triple, heavy double           for 3, for 2
+RPE                 @8, @ 8, rpe 8, RPE 8                rpe_8
+Bodyweight/bar      just body weight, empty bar          bodyweight, bar
+Failed reps         missed the last rep, couldn't get it failed
+Rep shorthand       for 5 reps                           for 5
+
+Heavy patterns: "Heavy" means "no prescribed weight, just do the reps
+heavy." Converting to `for N` lets the parser use context weight (or null
+if none).
+
+RPE normalization: Sentinels the RPE value as `rpe_8` so it can't be
+confused with a rep count. Parsed by the `rpe_(\d+)` regex later in the
+parser.
+
+Stage 3: Filler word removal (new)
+-----------------------------------
+10 filler regexes strip: um, uh, like, I think, let's see, you know,
+I mean, sort of, kind of, basically — deleted entirely, not replaced.
+This runs before the parser so filler sandwiched between numbers doesn't
+break set parsing.
+
+Stage 4: Fuzzy jargon match (unchanged)
+----------------------------------------
+Token-level Levenshtein correction for the core jargon list (amrap, rpe,
+pyramid, superset, etc.).
+
+Export additions: levenshtein, applyJargonExpansions, removeFillerWords
+are now exported for reuse by aiParser.ts.
+
+
+3. parser.ts — CONJUNCTION SPLITTING + CONFIDENCE OVERHAUL
+===========================================================
+
+The old parseWorkoutInput was a single 250-line function. It's now split
+into three layers:
+
+Layer 1: splitOnConjunctions(input)
+------------------------------------
+Splits input on segment boundaries using two-tier regex:
+
+Primary splits on: "then", "followed by", "after that"
+Secondary split on: "and" — but ONLY when preceded by a digit
+  (regex: (?<=\d)\s+and\s+)
+  This prevents splitting "bench and squat" (exercise conjunction)
+  while correctly splitting "135x10 and 185x5" (set conjunction).
+
+If no conjunctions are found, the input is treated as a single segment
+(identical to old behavior).
+
+Layer 2: parseSingleSegment(input, context) — New capabilities
+---------------------------------------------------------------
+- "for N" without weight: When remaining text starts with "for 5" (no
+  preceding weight number), uses context.lastWeight. Handles "same
+  exercise, for 8" or the output of "heavy triple" -> "for 3".
+
+- "bar x N" warmup detection: Matches "bar x 10" or "bar for 10" and
+  produces a warmup set with weight: null. The old parser had no concept
+  of "bar" as a weight specifier.
+
+- "3 sets AMRAP" / "3 sets to failure": Expands to 3 identical set
+  objects with isAMRAP: true, reps: null. Old parser only handled
+  single-set AMRAP.
+
+- Dumbbell "for" pattern: Old code handled "70s 8 8 7" (bare rep numbers
+  after weight+s) but not "50s for 12". New code tries the "for N"
+  pattern on the remainder after extracting the dumbbell weight, falling
+  back to bare rep numbers.
+
+- RPE extraction at two points: Before set parsing (catching rpe_8
+  sentinel tokens from jargon expansion) AND after (catching "rpe 8" or
+  "@8" in remaining text). Pre-extraction prevents RPE number from being
+  consumed as a rep count.
+
+- Boolean flag propagation: Every set now carries the full set of
+  semantic booleans (isWarmup, isDropSet, isAMRAP, isBodyweight, failed),
+  derived from the detected pattern.
+
+Layer 3: parseWorkoutInput — Multi-segment orchestration
+---------------------------------------------------------
+When splitOnConjunctions returns multiple segments:
+
+1. First segment is parsed fully (exercise detection + set extraction)
+2. Subsequent segments are parsed with propagated context:
+   - activeExerciseName = first segment's exercise
+   - lastWeight / lastReps = last set from previous segment
+3. All sets are merged under the first segment's exercise name
+
+Correctly handles: "Deadlift 315x5 then 365x3 then 405x1" — the "then"
+splits create three segments, each parsed independently, all logged under
+"Deadlift."
+
+Confidence model rewritten
+---------------------------
+Old logic was binary-ish: high by default, downgraded to medium if
+warnings/context/AMRAP, low if nothing found.
+
+New calcConfidence():
+  high   — exercise found AND every set has both weight and reps
+           (unless AMRAP or bodyweight, which legitimately have nulls)
+  medium — exercise found but some sets incomplete, OR active context
+           used (exercise guessed from session state), OR warnings
+           generated, OR parser had to guess
+  low    — no exercise found, or zero sets extracted
+
+needsConfirmation is set to true whenever confidence is medium.
+
+
+4. aiParser.ts — AI-FIRST ARCHITECTURE (COMPLETE REWRITE)
+==========================================================
+
+Four-component pipeline replacing the old thin fetch wrapper.
+
+Component 1: buildAIParserPrompt(transcript, context)
+------------------------------------------------------
+Builds two messages in OpenAI chat format:
+
+System message contains:
+  - Full canonical exercise list — all 80+ names from exerciseData.ts,
+    comma-joined. This is the most important piece; without it, the AI
+    hallucinates exercise names that don't exist in the app.
+  - Previous set context — "The user's previous set was: Barbell Bench
+    Press, 185 lbs x 8 reps." Allows AI to resolve "same weight."
+  - 18 explicit parsing rules covering: first-exercise-only, filler
+    removal, self-correction (use LAST stated number), AMRAP detection,
+    heavy patterns, RPE syntax, bodyweight/bar handling, drop sets,
+    warmups, failed reps, rep slang, weight x reps patterns, multi-set
+    expansion, progression lists, "same weight" resolution, null
+    handling, exact JSON output format.
+
+User message is just the raw transcript.
+
+Component 2: callAIParserWithRetry(system, user)
+-------------------------------------------------
+  - Posts to deep-work-ai-parser.richhank.workers.dev/parse with
+    { messages: [{ role, content }] } — OpenAI chat format
+  - Strips markdown code fences from response (LLMs often wrap JSON in
+    ```json``` despite instructions not to)
+  - On JSON parse failure: retries ONCE, appending "Previous response
+    was invalid JSON. Please output only valid JSON matching the schema
+    exactly." to the user message
+  - On second failure: throws, triggering the local fallback
+
+Component 3: mapAIToParseResult(aiResponse)
+--------------------------------------------
+Validates and transforms AI's flat JSON into the internal ParseResult:
+
+1. Fuzzy exercise matching — three-tier lookup:
+   - Exact case-insensitive match
+   - Levenshtein distance < 3 (catches minor spelling, singular/plural)
+   - Substring match as last resort (AI might say "Bench Press" instead
+     of "Barbell Bench Press")
+   - If no match: exercise set to raw AI value with confidence: "low"
+
+2. Set mapping — converts AI's boolean flags into internal type field:
+   isWarmup -> "warmup", isDropSet -> "drop", failed -> "failure",
+   else "normal". Preserves the booleans themselves.
+
+3. Empty guard — if AI returns zero sets, confidence drops to "low"
+   with needsConfirmation: true.
+
+Component 4: parseWorkoutInputSmart — Orchestration
+----------------------------------------------------
+Decision tree:
+
+localParser(input, context)
+  |
+  +-- confidence="high" + has sets -> return immediately (no AI cost)
+  |
+  +-- otherwise ->
+       buildAIParserPrompt(input, context)
+       callAIParserWithRetry(system, user)
+         |
+         +-- success + valid exercise + has sets ->
+         |    merge logic:
+         |      local has high-confidence sets but low-confidence exercise
+         |      AND AI returned a different exercise?
+         |        -> combine: AI exercise + local sets
+         |           (AI is better at naming, local is better at numbers)
+         |      otherwise -> return AI result
+         |
+         +-- failure (network error, invalid JSON after retry, empty sets) ->
+              return local result (may be empty/low confidence)
+
+Telemetry — unchanged: tracks totalCalls, localHits, aiFallbacks,
+aiFailures in localStorage. The AI-fallback rate is:
+  aiFallbacks / (localHits + aiFallbacks)
+
+
+SAMPLE UTTERANCE TEST RESULTS
+==============================
+
+Utterance                                          Before              After
+-----------------------------------------------------------------------------
+"Um, bench press... 185 for ten,                   Two sets or         AI: 185x8
+ no wait, eight reps"                              confused            (self-correction)
+
+"Squats: bar x 10, 135x5, 185x3, 225x1"           No bar handling     4 sets, first as
+                                                   first set broken    warmup w/null wt
+
+"Deadlift 315 for a triple,                       Only first set      2 sets under
+ then 365 for a double"                           captured            Deadlift
+
+"Pull-ups, 3 sets to failure"                     Single AMRAP set    3 AMRAP sets
+
+"Dumbbell shoulder press 50s for twelve @8"       DB wt parsed,       wt:50 reps:12
+                                                   reps lost           rpe:8
+
+"Same weight for five" (last wt 135)              Worked before       Still works;
+                                                                      AI fallback path
+
+"Bench 185... actually make that 195 for six"     Two sets            Local: two sets
+                                                  185x?, 195x6        AI: one set 195x6
