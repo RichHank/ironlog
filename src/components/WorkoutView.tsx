@@ -262,17 +262,17 @@ export default function WorkoutView({
                               <td className="py-1.5 pr-2 text-vapor-muted">{si + 1}</td>
                               <td className="py-1.5 px-1">
                                 <input type="number" inputMode="decimal" value={editDraft.weight ?? ''}
-                                  onChange={e => setEditDraft(p => ({ ...p, weight: e.target.value ? Number(e.target.value) : null }))}
+                                  onChange={e => setEditDraft(p => ({ ...p, weight: e.target.value ? Math.min(Number(e.target.value), 9999) : null }))}
                                   className="w-16 input-field px-1.5 py-1 text-right text-xs font-mono" placeholder="BW" />
                               </td>
                               <td className="py-1.5 px-1">
                                 <input type="number" inputMode="numeric" value={editDraft.reps ?? ''}
-                                  onChange={e => setEditDraft(p => ({ ...p, reps: e.target.value ? Number(e.target.value) : null }))}
+                                  onChange={e => setEditDraft(p => ({ ...p, reps: e.target.value ? Math.min(Number(e.target.value), 9999) : null }))}
                                   className="w-12 input-field px-1.5 py-1 text-right text-xs font-mono" />
                               </td>
                               <td className="py-1.5 px-1 hidden sm:table-cell">
                                 <input type="number" inputMode="decimal" value={editDraft.rpe ?? ''}
-                                  onChange={e => setEditDraft(p => ({ ...p, rpe: e.target.value ? Number(e.target.value) : null }))}
+                                  onChange={e => setEditDraft(p => ({ ...p, rpe: e.target.value ? Math.min(Number(e.target.value), 10) : null }))}
                                   className="w-12 input-field px-1.5 py-1 text-right text-xs font-mono" />
                               </td>
                               <td className="py-1.5 px-1"></td>

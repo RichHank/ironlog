@@ -30,9 +30,9 @@ export default function AddSetForm({ exercise, onAdd, prevSets }: Props) {
   const handleSubmit = useCallback(() => {
     if (!reps || reps === '0') return;
     onAdd({
-      weight: weight ? Number(weight) : null,
-      reps: Number(reps),
-      rpe: rpe ? Number(rpe) : null,
+      weight: weight ? Math.min(Number(weight), 9999) : null,
+      reps: Math.min(Number(reps), 9999),
+      rpe: rpe ? Math.min(Number(rpe), 10) : null,
       type,
     });
     setRpe('');
@@ -80,9 +80,10 @@ export default function AddSetForm({ exercise, onAdd, prevSets }: Props) {
             type="number"
             inputMode="decimal"
             value={weight}
-            onChange={e => setWeight(e.target.value)}
+            onChange={e => setWeight(e.target.value.slice(0, 6))}
             placeholder={prevSetForThisIndex?.weight !== null && prevSetForThisIndex?.weight !== undefined ? prevSetForThisIndex.weight.toString() : weightPlaceholder(exercise.exerciseKey, unit)}
             className="input-field w-full text-right font-mono"
+            max="9999"
           />
         </div>
         <div className="flex-1 min-w-[60px]">
@@ -91,9 +92,10 @@ export default function AddSetForm({ exercise, onAdd, prevSets }: Props) {
             type="number"
             inputMode="numeric"
             value={reps}
-            onChange={e => setReps(e.target.value)}
+            onChange={e => setReps(e.target.value.slice(0, 4))}
             placeholder={prevSetForThisIndex?.reps !== null && prevSetForThisIndex?.reps !== undefined ? prevSetForThisIndex.reps.toString() : '0'}
             className="input-field w-full text-right font-mono"
+            max="999"
           />
         </div>
         <div className="w-14">
@@ -102,9 +104,10 @@ export default function AddSetForm({ exercise, onAdd, prevSets }: Props) {
             type="number"
             inputMode="decimal"
             value={rpe}
-            onChange={e => setRpe(e.target.value)}
+            onChange={e => setRpe(e.target.value.slice(0, 4))}
             placeholder={prevSetForThisIndex?.rpe !== null && prevSetForThisIndex?.rpe !== undefined ? prevSetForThisIndex.rpe.toString() : '-'}
             className="input-field w-full text-right font-mono"
+            max="10"
           />
         </div>
         <button

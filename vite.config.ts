@@ -22,7 +22,7 @@ function swBuildId(): Plugin {
 
 export default defineConfig({
   plugins: [react(), swBuildId()],
-  base: '/ironlog-vaporwave/',
+  base: '/ironlog/',
   build: {
     outDir: 'dist',
     assetsInlineLimit: 4096,
