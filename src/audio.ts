@@ -1,8 +1,14 @@
 let audioCtx: AudioContext | null = null;
+let masterGain: GainNode | null = null;
+let _sfxVolume = 0.75;       // 0–1 multiplier
+let _sfxMuted = false;
 
 export function getAudioContext() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = _sfxMuted ? 0 : _sfxVolume;
+    masterGain.connect(audioCtx.destination);
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
@@ -10,10 +16,48 @@ export function getAudioContext() {
   return audioCtx;
 }
 
+/** The master gain node that all SFX should route through. */
+export function getMasterGain(): GainNode | null {
+  getAudioContext(); // ensure ctx + masterGain exist
+  return masterGain;
+}
+
+// ── Volume / mute controls ──
+
+export function getSfxVolume(): number {
+  return Math.round(_sfxVolume * 100);
+}
+
+export function getSfxMuted(): boolean {
+  return _sfxMuted;
+}
+
+export function setSfxVolume(level0to100: number) {
+  _sfxVolume = Math.max(0, Math.min(100, level0to100)) / 100;
+  if (masterGain && audioCtx && !_sfxMuted) {
+    masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(_sfxVolume, audioCtx.currentTime + 0.08);
+  }
+}
+
+export function setSfxMuted(muted: boolean) {
+  _sfxMuted = muted;
+  if (masterGain && audioCtx) {
+    masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(muted ? 0 : _sfxVolume, audioCtx.currentTime + 0.08);
+  }
+}
+
+// ── Sound effect functions ──
+// All route through masterGain (via getMasterGain()) so volume/mute are
+// respected uniformly.
+
 // Low, mechanical clack for buttons
 export function playClick() {
   try {
     const ctx = getAudioContext();
+    const out = getMasterGain();
+    if (!out) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     const filter = ctx.createBiquadFilter();
@@ -31,7 +75,7 @@ export function playClick() {
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
 
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.05);
@@ -44,13 +88,15 @@ export function playClick() {
 export function playSuccess() {
   try {
     const ctx = getAudioContext();
+    const out = getMasterGain();
+    if (!out) return;
     const freqs = [261.63, 329.63, 392.00, 493.88]; // Cmaj7
     
-    const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0.05, ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.2);
-    masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
-    masterGain.connect(ctx.destination);
+    const noteGain = ctx.createGain();
+    noteGain.gain.setValueAtTime(0.05, ctx.currentTime);
+    noteGain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.2);
+    noteGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    noteGain.connect(out);
 
     freqs.forEach(freq => {
       const osc = ctx.createOscillator();
@@ -63,7 +109,7 @@ export function playSuccess() {
       filter.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 1.0);
       
       osc.connect(filter);
-      filter.connect(masterGain);
+      filter.connect(noteGain);
       
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 1.0);
@@ -77,6 +123,8 @@ export function playSuccess() {
 export function playAlarm() {
   try {
     const ctx = getAudioContext();
+    const out = getMasterGain();
+    if (!out) return;
     for (let i = 0; i < 4; i++) {
       const time = ctx.currentTime + (i * 0.25);
       const osc = ctx.createOscillator();
@@ -90,7 +138,7 @@ export function playAlarm() {
       gain.gain.linearRampToValueAtTime(0, time + 0.15);
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(out);
       
       osc.start(time);
       osc.stop(time + 0.15);
@@ -102,6 +150,8 @@ export function playAlarm() {
 export function playPowerUp() {
   try {
     const ctx = getAudioContext();
+    const out = getMasterGain();
+    if (!out) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
@@ -113,7 +163,7 @@ export function playPowerUp() {
     gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
     
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
     
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.5);
@@ -124,6 +174,8 @@ export function playPowerUp() {
 export function playError() {
   try {
     const ctx = getAudioContext();
+    const out = getMasterGain();
+    if (!out) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
@@ -135,7 +187,7 @@ export function playError() {
     gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
     
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
     
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);

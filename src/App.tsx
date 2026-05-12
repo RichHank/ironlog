@@ -5,6 +5,7 @@ import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
 import type { ShareOutcome } from './share';
 import { getVaporSynth } from './vaporSynth';
+import { setSfxVolume, setSfxMuted } from './audio';
 import { useTimer } from './hooks/useTimer';
 import { useIOSPWA, InstallPrompt } from './hooks/useIOSPWA';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -47,6 +48,12 @@ export default function App() {
   // on hide; the canonical persistence path is the write-through in
   // saveSession/saveHistory etc.)
   useEffect(() => { setupVisibilitySync(); }, []);
+
+  // Apply persisted SFX volume/mute on mount
+  useEffect(() => {
+    setSfxVolume(settings.soundEffectsVolume ?? 75);
+    setSfxMuted(settings.soundEffectsMuted ?? false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cold-start hydration. localStorage may have been evicted by iOS but IDB
   // is durable — pull from IDB on mount and overlay anything we find that's

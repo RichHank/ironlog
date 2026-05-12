@@ -80,4 +80,6 @@ export type WeightUnit = 'lb' | 'kg';
 export interface AppSettings {
   weightUnit: WeightUnit;
   restTimerDuration: number;
+  soundEffectsVolume: number;   // 0-100, default 75
+  soundEffectsMuted: boolean;
 }

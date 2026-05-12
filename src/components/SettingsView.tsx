@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { exportAllJSON, exportHistoryCSV, downloadFile, clearAllData, loadSettings, saveSettings, loadHistory, saveHistory, loadRoutines, saveRoutines } from '../storage';
 import { todayStamp } from '../utils';
+import { getSfxVolume, getSfxMuted, setSfxVolume, setSfxMuted } from '../audio';
 import BodyMeasurements from './BodyMeasurements';
 import PlateCalculator from './PlateCalculator';
 import StravaSection from './StravaSection';
@@ -16,6 +17,8 @@ export default function SettingsView({ onShowToast }: Props) {
   const [settings, setSettings] = useState(loadSettings);
   const [tab, setTab] = useState<Tab>('prefs');
   const [musicMuted, setMusicMuted] = useState(() => getVaporSynth().isMuted());
+  const [sfxVolume, setSfxVolState] = useState(() => getSfxVolume());
+  const [sfxMuted, setSfxMutedState] = useState(() => getSfxMuted());
 
   const toggleMusic = () => {
     const synth = getVaporSynth();
@@ -23,6 +26,23 @@ export default function SettingsView({ onShowToast }: Props) {
     synth.setMuted(next);
     setMusicMuted(next);
     if (!next) synth.start().catch(() => {});
+  };
+
+  const handleSfxVolumeChange = (vol: number) => {
+    setSfxVolState(vol);
+    setSfxVolume(vol);
+    const s = loadSettings();
+    s.soundEffectsVolume = vol;
+    saveSettings(s);
+  };
+
+  const toggleSfxMute = () => {
+    const next = !sfxMuted;
+    setSfxMutedState(next);
+    setSfxMuted(next);
+    const s = loadSettings();
+    s.soundEffectsMuted = next;
+    saveSettings(s);
   };
 
   const handleExport = () => {
@@ -111,6 +131,37 @@ export default function SettingsView({ onShowToast }: Props) {
                 {musicMuted ? 'Off' : 'On'}
               </button>
             </div>
+          </div>
+
+          {/* ── Sound Effects ── */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-vapor-pink">UI Sound Effects</p>
+                <p className="text-[11px] text-vapor-muted mt-0.5">Clicks, chimes, alarm. Master volume for all interaction sounds.</p>
+              </div>
+              <button
+                onClick={toggleSfxMute}
+                className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${sfxMuted ? 'bg-vapor-navy text-vapor-muted' : 'bg-[#ff2aa3] text-white shadow-[0_0_12px_rgba(255,42,163,0.4)]'}`}
+              >
+                {sfxMuted ? 'Muted' : 'On'}
+              </button>
+            </div>
+            {!sfxMuted && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-vapor-muted w-8 text-right">0</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={sfxVolume}
+                  onChange={e => handleSfxVolumeChange(Number(e.target.value))}
+                  className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ accentColor: '#ff2aa3' }}
+                />
+                <span className="text-xs text-vapor-muted w-10">{sfxVolume}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
