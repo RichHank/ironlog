@@ -80,8 +80,9 @@ export default function App() {
 
   // Register service worker
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      navigator.serviceWorker.register(`${baseUrl}sw.js`, { scope: baseUrl }).catch(() => {});
     }
     // Only init PushManager if installed as PWA
     if ((navigator as Navigator & { standalone?: boolean }).standalone && 'PushManager' in window) {

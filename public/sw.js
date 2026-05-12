@@ -4,7 +4,10 @@
 // __BUILD_ID__ is replaced at build time by the sw-build-id Vite plugin so
 // every deploy gets a fresh cache and the activate handler purges the old one.
 const CACHE = 'ironlog-__BUILD_ID__';
-const APP_SHELL = ['/', '/index.html', '/manifest.json'];
+const BASE_URL = new URL('./', self.location.href);
+const urlFor = (path) => new URL(path, BASE_URL).toString();
+const APP_SHELL = ['./', './index.html', './manifest.json'].map(urlFor);
+const APP_SHELL_PATHS = new Set(APP_SHELL.map((entry) => new URL(entry).pathname));
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -30,9 +33,11 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
+  if (url.origin !== self.location.origin) return;
+
   // For app shell files: network-first so deploys are picked up immediately,
   // fall back to cache only when offline.
-  if (APP_SHELL.some((p) => url.pathname.endsWith(p))) {
+  if (APP_SHELL_PATHS.has(url.pathname)) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -73,8 +78,8 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body || 'Time to train!',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: urlFor('./icon-192.png'),
+    badge: urlFor('./icon-192.png'),
     tag: 'ironlog-workout',
     vibrate: [100, 50, 100],
   };
@@ -88,7 +93,7 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.length > 0) {
         clients[0].focus();
       } else {
-        self.clients.openWindow('/');
+        self.clients.openWindow(BASE_URL.href);
       }
     })
   );
