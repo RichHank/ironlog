@@ -13,9 +13,6 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: https://richhank.github.io/ironlog/
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
