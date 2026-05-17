@@ -107,7 +107,7 @@ export default function RoutineEditor({ routine, onSave, onClose }: Props) {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-28">
         {/* Exercises */}
         {draft.exercises.map((ex, ei) => (
           <div key={ex.id} className="mt-3 card p-4">
@@ -196,7 +196,7 @@ export default function RoutineEditor({ routine, onSave, onClose }: Props) {
       </div>
 
       {/* Save button */}
-      <div className="safe-area-bottom border-t border-vapor-purple bg-vapor-black px-4 py-3">
+      <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-[70] safe-area-bottom border-t border-vapor-purple bg-vapor-black px-4 py-3 shadow-[0_-4px_20px_rgba(255,42,163,0.14)]">
         <button
           onClick={handleSave}
           disabled={!draft.name.trim()}
