@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { WorkoutSession, WorkoutSet, ExerciseLog } from './types';
-import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB } from './storage';
+import { WorkoutSession, WorkoutSet, ExerciseLog, Routine } from './types';
+import { generateId, loadSession, saveSession, clearSession, loadHistory, addWorkout, saveHistory, recalcPRs, updatePRsAfterAdd, loadSettings, hydrateFromIDB, upsertRoutine } from './storage';
 import { setupVisibilitySync } from './idb-storage';
 import { readOAuthCallback, completeOAuth, clearOAuthCallback, loadTokens, pushWorkout } from './strava';
 import type { ShareOutcome } from './share';
@@ -262,6 +262,16 @@ export default function App() {
 
   const finishWorkout = useCallback(() => {
     if (!session) return;
+    const emptyExercises = session.exercises.filter(ex =>
+      ex.sets.length === 0 || ex.sets.every(set => set.weight === null && set.reps === null)
+    );
+    if (emptyExercises.length > 0) {
+      const names = emptyExercises.map(ex => ex.name).join(', ');
+      const proceed = window.confirm(
+        `${names} ${emptyExercises.length === 1 ? 'has' : 'have'} no logged weight or reps. Finish workout anyway?`
+      );
+      if (!proceed) return;
+    }
     const completed: WorkoutSession = {
       ...session,
       completedAt: Date.now(),
@@ -291,6 +301,36 @@ export default function App() {
         .catch(err => showToast(`Strava push failed: ${err.message ?? err}`));
     });
   }, [session, timer, showToast]);
+
+  const saveCurrentWorkoutAsRoutine = useCallback(() => {
+    if (!session || session.exercises.length === 0) return;
+    const suggestedName = session.name?.trim() || 'New Routine';
+    const name = window.prompt('Routine name', suggestedName)?.trim();
+    if (!name) return;
+
+    const routine: Routine = {
+      id: generateId(),
+      name,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      exercises: session.exercises.map(ex => ({
+        id: generateId(),
+        exerciseKey: ex.exerciseKey,
+        name: ex.name,
+        plannedSets: ex.sets.length > 0
+          ? ex.sets.map(set => ({
+              id: generateId(),
+              weight: set.weight,
+              reps: set.reps,
+              type: set.type,
+            }))
+          : [{ id: generateId(), weight: null, reps: null, type: 'normal' }],
+      })),
+    };
+
+    upsertRoutine(routine);
+    showToast('Routine saved');
+  }, [session, showToast]);
 
   const pushHistoryToStrava = useCallback(async (sessionId: string) => {
     const target = history.find(s => s.id === sessionId);
@@ -380,6 +420,39 @@ export default function App() {
     recalcPRs(updated);
   }, [history]);
 
+  const addHistorySet = useCallback((sessionId: string, exerciseId: string) => {
+    const blankSet: WorkoutSet = {
+      id: generateId(),
+      weight: null,
+      reps: null,
+      rpe: null,
+      type: 'normal',
+      completedAt: Date.now(),
+    };
+    const updated = history.map(s => {
+      if (s.id !== sessionId) return s;
+      return {
+        ...s,
+        exercises: s.exercises.map(ex =>
+          ex.id === exerciseId ? {
+            ...ex,
+            sets: [...ex.sets, { ...blankSet, completedAt: s.completedAt || blankSet.completedAt }],
+          } : ex
+        ),
+      };
+    });
+    setHistory(updated);
+    saveHistory(updated);
+    showToast('Set added');
+  }, [history, showToast]);
+
+  const updateHistoryWorkout = useCallback((sessionId: string, updates: Partial<WorkoutSession>) => {
+    const updated = history.map(s => s.id === sessionId ? { ...s, ...updates } : s);
+    setHistory(updated);
+    saveHistory(updated);
+    showToast('Workout updated');
+  }, [history, showToast]);
+
   const deleteHistorySet = useCallback((sessionId: string, exerciseId: string, setId: string) => {
     const updated = history.map(s => {
       if (s.id !== sessionId) return s;
@@ -414,6 +487,8 @@ export default function App() {
         session={historyDetail}
         onBack={() => setHistoryDetailId(null)}
         onDelete={deleteHistoryWorkout}
+        onUpdateSession={updateHistoryWorkout}
+        onAddSet={addHistorySet}
         onUpdateSet={updateHistorySet}
         onDeleteSet={deleteHistorySet}
         onPushToStrava={pushHistoryToStrava}
@@ -438,6 +513,7 @@ export default function App() {
             onDeleteSet={deleteSet}
             onUpdateSession={updateSessionNotes}
             onDeleteExercise={deleteExercise}
+            onSaveRoutine={saveCurrentWorkoutAsRoutine}
             onFinish={finishWorkout}
             onDiscard={discardWorkout}
             onUndoLast={undoLast}

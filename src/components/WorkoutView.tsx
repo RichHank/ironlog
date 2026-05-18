@@ -22,6 +22,7 @@ type Props = {
   onDeleteSet: (exerciseId: string, setId: string) => void;
   onUpdateSession?: (updates: Partial<WorkoutSession>) => void;
   onDeleteExercise: (id: string) => void;
+  onSaveRoutine: () => void;
   onFinish: () => void;
   onDiscard: () => void;
   onUndoLast: () => void;
@@ -31,7 +32,7 @@ type Props = {
 
 export default function WorkoutView({
   session, history, timer, onAddExercise, onAddExerciseWithSets, onAddSet, onUpdateSet, onDeleteSet,
-  onUpdateSession, onDeleteExercise, onFinish, onDiscard, onUndoLast, onNavigate, onShowToast,
+  onUpdateSession, onDeleteExercise, onSaveRoutine, onFinish, onDiscard, onUndoLast, onNavigate, onShowToast,
 }: Props) {
   const unit = loadSettings().weightUnit;
   const [showSelector, setShowSelector] = useState(false);
@@ -172,6 +173,7 @@ export default function WorkoutView({
         </div>
         <div className="flex gap-2 items-center">
           <VoiceButton onResult={voice.execute} />
+          <button onClick={() => { playSuccess(); onSaveRoutine(); }} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Save Routine</button>
           <button onClick={() => { playError(); onDiscard(); }} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
           <button onClick={() => { playSuccess(); onFinish(); }} className="btn-primary min-h-touch px-3 py-1.5 text-xs">Finish</button>
         </div>

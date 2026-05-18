@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { WorkoutSession, WorkoutSet } from '../types';
 import { formatDate, formatTime, formatDuration, est1RM, formatWeightCell } from '../utils';
 import { loadSettings } from '../storage';
@@ -8,19 +8,27 @@ type Props = {
   session: WorkoutSession;
   onBack: () => void;
   onDelete: (id: string) => void;
+  onUpdateSession: (sessionId: string, updates: Partial<WorkoutSession>) => void;
+  onAddSet: (sessionId: string, exerciseId: string) => void;
   onUpdateSet: (sessionId: string, exerciseId: string, set: WorkoutSet) => void;
   onDeleteSet: (sessionId: string, exerciseId: string, setId: string) => void;
   onPushToStrava: (sessionId: string) => Promise<void>;
   onShareDone: (outcome: ShareOutcome) => void;
 };
 
-export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, onDeleteSet, onPushToStrava, onShareDone }: Props) {
+export default function HistoryDetail({ session, onBack, onDelete, onUpdateSession, onAddSet, onUpdateSet, onDeleteSet, onPushToStrava, onShareDone }: Props) {
   const unit = loadSettings().weightUnit;
   const [editing, setEditing] = useState<{ exId: string; setId: string } | null>(null);
   const [draft, setDraft] = useState<{ weight: string; reps: string; rpe: string }>({ weight: '', reps: '', rpe: '' });
+  const [editingWorkout, setEditingWorkout] = useState(false);
+  const [metaDraft, setMetaDraft] = useState({ name: session.name ?? '', notes: session.notes ?? '' });
   const [pushing, setPushing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [showGarminHelp, setShowGarminHelp] = useState(false);
+
+  useEffect(() => {
+    setMetaDraft({ name: session.name ?? '', notes: session.notes ?? '' });
+  }, [session.id, session.name, session.notes]);
 
   const handlePush = async () => {
     setPushing(true);
@@ -99,12 +107,26 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
     setEditing(null);
   };
 
+  const saveWorkoutMeta = () => {
+    onUpdateSession(session.id, {
+      name: metaDraft.name.trim() || undefined,
+      notes: metaDraft.notes.trim() || undefined,
+    });
+    setEditingWorkout(false);
+  };
+
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-vapor-black">
       <div className="safe-area-top border-b border-vapor-purple bg-vapor-black px-4 pb-3">
         <div className="flex items-center justify-between gap-3 mb-1">
           <button onClick={onBack} className="min-h-touch text-vapor-cyan font-semibold text-sm">← Back</button>
           <div className="flex gap-2">
+            <button
+              onClick={() => setEditingWorkout(prev => !prev)}
+              className="min-h-touch rounded-lg bg-zinc-700 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              {editingWorkout ? 'Done Editing' : 'Edit Workout'}
+            </button>
             <button
               onClick={handleShare}
               disabled={sharing}
@@ -163,6 +185,25 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
           <span>{totalSets} set{totalSets !== 1 ? 's' : ''}</span>
           <span className="text-vapor-cyan font-semibold">{totalVolume.toLocaleString()} {unit}</span>
         </div>
+        {editingWorkout && (
+          <div className="mt-3 space-y-2 rounded-lg border border-vapor-purple/40 bg-vapor-navy/30 p-3">
+            <input
+              type="text"
+              value={metaDraft.name}
+              onChange={e => setMetaDraft(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Workout name"
+              className="input-field w-full text-sm"
+            />
+            <textarea
+              value={metaDraft.notes}
+              onChange={e => setMetaDraft(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Workout notes"
+              rows={2}
+              className="input-field w-full resize-none text-sm"
+            />
+            <button onClick={saveWorkoutMeta} className="btn-primary w-full py-2 text-sm">Save Workout Details</button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-8">
@@ -240,7 +281,7 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                           <td className="py-1.5 px-2 text-right font-mono text-vapor-muted">{set.rpe ? `@${set.rpe}` : '-'}</td>
                           <td className="py-1.5 px-2 text-right font-mono text-vapor-cyan">{e1rm > 0 ? e1rm : ''}</td>
                           <td className="py-1.5 px-1 text-right">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <button onClick={() => startEdit(ex.id, set)} className="text-xs text-vapor-muted/80 hover:text-zinc-300">Edit</button>
                               <button onClick={() => onDeleteSet(session.id, ex.id, set.id)} className="min-h-touch min-w-[44px] text-xs text-vapor-muted/80 hover:text-red-400">Del</button>
                             </div>
@@ -250,6 +291,15 @@ export default function HistoryDetail({ session, onBack, onDelete, onUpdateSet, 
                     })}
                   </tbody>
                 </table>
+              )}
+
+              {editingWorkout && (
+                <button
+                  onClick={() => onAddSet(session.id, ex.id)}
+                  className="mt-3 text-xs font-semibold text-vapor-cyan"
+                >
+                  + Add set
+                </button>
               )}
 
               {ex.notes && (
