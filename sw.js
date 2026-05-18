@@ -1,9 +1,9 @@
 // IronLog Service Worker
 // Cache-first strategy for app shell, network-first for API calls.
 
-// mp94ttjz is replaced at build time by the sw-build-id Vite plugin so
+// mpbph7qk is replaced at build time by the sw-build-id Vite plugin so
 // every deploy gets a fresh cache and the activate handler purges the old one.
-const CACHE = 'ironlog-mp94ttjz';
+const CACHE = 'ironlog-mpbph7qk';
 const BASE_URL = new URL('./', self.location.href);
 const urlFor = (path) => new URL(path, BASE_URL).toString();
 const APP_SHELL = ['./', './index.html', './manifest.json'].map(urlFor);
