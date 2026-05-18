@@ -163,7 +163,7 @@ export default function WorkoutView({
   return (
     <div className="flex flex-col gap-3 px-3 pt-4 sm:px-4">
       {/* Header stats */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs text-vapor-muted uppercase tracking-wider">Active Workout</p>
           <p className="text-lg font-black text-[#f0e6ff]">
@@ -171,7 +171,7 @@ export default function WorkoutView({
           </p>
           <p className="text-xs text-[#887baa]">{formatTime(session!.startedAt)}</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <VoiceButton onResult={voice.execute} />
           <button onClick={() => { playSuccess(); onSaveRoutine(); }} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Save Routine</button>
           <button onClick={() => { playError(); onDiscard(); }} className="btn-secondary min-h-touch px-3 py-1.5 text-xs">Discard</button>
